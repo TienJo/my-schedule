@@ -3,23 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>雲端動態日程表</title>
+  <title>CRYO ARCHIVE // SCHEDULE MATRIX</title>
   <style>
     :root {
-      --bg-color: #1e1e2e;
-      --header-bg: #313244;
-      --cell-bg: #181825;
-      --border-color: #45475a;
-      --text-color: #cdd6f4;
-      --dock-bg: #11111b;
-      --active-card-border: #f5e0dc;
+      --bg-color: #002be8;
+      --header-bg: #000000;
+      --cell-bg: #031ebd;
+      --border-color: #000000;
+      --text-color: #ffffff;
+      --dock-bg: #000000;
+      --accent-color: #e2ff00;
+      --accent-dark: #000000;
+      --card-default: #ffffff;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: "Space Mono", "Consolas", "Courier New", monospace, -apple-system, sans-serif;
+      text-transform: uppercase;
     }
 
     body {
@@ -30,153 +33,207 @@
       height: 100vh;
       overflow: hidden;
       user-select: none;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 20px 20px;
     }
 
-    /* 頂部系統設定列 */
+    /* 頂部科幻終端抬頭列 */
     header {
       background-color: var(--header-bg);
-      border-bottom: 1px solid var(--border-color);
+      border-bottom: 3px solid #000000;
       padding: 8px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 16px;
+      z-index: 20;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
       gap: 12px;
-      flex-wrap: wrap;
+      font-weight: 900;
+      letter-spacing: 2px;
+      font-size: 15px;
+      color: #ffffff;
+    }
+
+    .status-tag {
+      background: var(--accent-color);
+      color: #000000;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
     }
 
     .controls-group {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     button {
-      background-color: #89b4fa;
-      color: #11111b;
-      border: none;
-      border-radius: 4px;
-      padding: 6px 12px;
-      font-weight: 600;
+      background-color: #ffffff;
+      color: #000000;
+      border: 2px solid #000000;
+      border-radius: 0px;
+      padding: 5px 12px;
+      font-weight: 800;
       cursor: pointer;
-      font-size: 13px;
-      transition: opacity 0.15s;
+      font-size: 11px;
+      letter-spacing: 1px;
+      transition: all 0.1s;
+    }
+
+    button.accent {
+      background-color: var(--accent-color);
+      border-color: #000000;
+      color: #000000;
     }
 
     button.secondary {
-      background-color: #45475a;
-      color: var(--text-color);
+      background-color: #002be8;
+      border-color: #ffffff;
+      color: #ffffff;
     }
 
     button.danger {
-      background-color: #f38ba8;
-      color: #11111b;
-    }
-
-    button:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
+      background-color: #ff3344;
+      border-color: #000000;
+      color: #ffffff;
     }
 
     button:hover:not(:disabled) {
-      opacity: 0.85;
+      transform: translate(-1px, -1px);
+      box-shadow: 2px 2px 0px #000000;
+    }
+
+    button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      border-color: #666;
     }
 
     .color-picker-label {
-      font-size: 12px;
+      font-size: 10px;
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
+      font-weight: bold;
+      color: #ffffff;
+      border: 1px solid #444;
+      padding: 2px 6px;
+      background: #111;
     }
 
     input[type="color"] {
-      border: none;
-      width: 26px;
-      height: 26px;
-      border-radius: 4px;
+      border: 1px solid #000;
+      width: 20px;
+      height: 20px;
+      border-radius: 0px;
       cursor: pointer;
       background: none;
     }
 
     input[type="text"] {
-      background-color: #181825;
-      color: var(--text-color);
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
+      background-color: #000000;
+      color: var(--accent-color);
+      border: 2px solid #333;
+      border-radius: 0px;
       padding: 6px 10px;
-      font-size: 13px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
       outline: none;
     }
 
     input[type="text"]:focus {
-      border-color: #89b4fa;
+      border-color: var(--accent-color);
+      background-color: #050505;
     }
 
-    /* 日程表主顯示區 */
+    /* 日程表主結構 */
     .schedule-container {
       flex: 1;
       overflow: auto;
-      padding: 12px;
+      padding: 16px;
     }
 
     .grid-table {
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
+      border: 3px solid #000000;
+      background: #000000;
+      box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.4);
     }
 
     .grid-table th, .grid-table td {
-      border: 1px solid var(--border-color);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       text-align: center;
     }
 
     .grid-table th {
-      background-color: var(--header-bg);
-      padding: 8px 4px;
-      font-size: 13px;
+      background-color: #000000;
+      color: #ffffff;
+      padding: 10px 4px;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 2px;
       position: sticky;
       top: 0;
       z-index: 10;
+      border-bottom: 2px solid #ffffff;
     }
 
     .time-col {
-      width: 65px;
-      font-size: 12px;
-      background-color: var(--header-bg);
+      width: 75px;
+      font-size: 11px;
+      font-weight: 800;
+      background-color: #000000;
+      color: var(--accent-color);
+      letter-spacing: 1px;
+      border-right: 2px solid #ffffff;
     }
 
     .slot-cell {
       background-color: var(--cell-bg);
-      height: 46px;
+      height: 48px;
       vertical-align: middle;
       padding: 2px;
-      transition: background-color 0.15s;
+      transition: background-color 0.1s;
+      position: relative;
     }
 
     .slot-cell.drag-over {
-      background-color: rgba(137, 180, 250, 0.25);
+      background-color: var(--accent-color) !important;
+      outline: 2px dashed #000000;
     }
 
-    /* 下方卡帶工作台 */
+    /* 底部卡帶終端機 */
     .dock-area {
       background-color: var(--dock-bg);
-      border-top: 2px solid var(--border-color);
-      padding: 10px 16px;
-      height: 200px;
+      border-top: 4px solid #ffffff;
+      padding: 12px 16px;
+      height: 220px;
       display: flex;
       flex-direction: column;
       gap: 10px;
+      box-shadow: 0px -4px 10px rgba(0,0,0,0.5);
     }
 
-    /* 操作控制列 */
     .workbench-toolbar {
       display: flex;
       align-items: center;
       gap: 12px;
       flex-wrap: wrap;
-      background-color: #181825;
+      background-color: #0a0a0a;
       padding: 8px 12px;
-      border-radius: 6px;
-      border: 1px solid var(--border-color);
+      border: 1px solid #222;
     }
 
     .workbench-section {
@@ -186,55 +243,67 @@
     }
 
     .workbench-divider {
-      width: 1px;
-      height: 22px;
-      background-color: var(--border-color);
+      width: 2px;
+      height: 24px;
+      background-color: #333333;
     }
 
-    /* 底部卡帶暫存庫 */
     .dock-slots {
       flex: 1;
       display: flex;
-      gap: 10px;
+      gap: 8px;
       overflow-x: auto;
       align-items: center;
-      padding: 4px;
-      border-radius: 6px;
-      background-color: rgba(24, 24, 37, 0.5);
-      border: 1px dashed var(--border-color);
+      padding: 6px;
+      background: #050505;
+      border: 1px solid #222;
     }
 
-    /* 卡帶樣式 */
+    /* 工業風卡帶 */
     .tape-card {
-      padding: 6px 12px;
-      border-radius: 5px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #11111b;
+      border-radius: 0px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #000000;
       cursor: grab;
       display: flex;
       align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
-      width: 95%;
+      justify-content: space-between;
+      width: 96%;
       margin: 0 auto;
-      height: 36px;
-      border: 2px solid transparent;
-      transition: transform 0.1s, border-color 0.1s;
+      height: 38px;
+      padding: 0 10px;
+      border: 2px solid #000000;
+      box-shadow: 3px 3px 0px #000000;
+      position: relative;
+    }
+
+    .tape-card::before {
+      content: "";
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      bottom: 2px;
+      width: 3px;
+      background: #000000;
+      opacity: 0.4;
     }
 
     .dock-slots .tape-card {
-      width: 150px;
+      width: 170px;
       flex-shrink: 0;
     }
 
     .tape-card.selected {
-      border-color: var(--active-card-border);
-      box-shadow: 0 0 8px var(--active-card-border);
+      border: 2px solid var(--accent-color);
+      box-shadow: 0 0 10px var(--accent-color), 3px 3px 0px #000000;
     }
 
     .tape-card:active {
       cursor: grabbing;
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0px #000000;
     }
 
     .tape-card span {
@@ -242,85 +311,98 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       pointer-events: none;
+      padding-left: 6px;
+    }
+
+    .card-meta-code {
+      font-size: 8px;
+      opacity: 0.6;
+      pointer-events: none;
+      font-weight: bold;
     }
 
     .hint-text {
-      font-size: 11px;
-      color: #a6adc8;
+      font-size: 10px;
+      color: #888888;
+      letter-spacing: 1px;
     }
   </style>
 </head>
 <body>
 
-  <!-- 頂部顏色與備份設定 -->
+  <!-- 終端頂部 HUD -->
   <header>
-    <div class="controls-group">
-      <span style="font-weight: 700; font-size: 14px;">日程系統設定</span>
-      <button class="secondary" onclick="exportData()">匯出備份</button>
-      <button class="secondary" onclick="document.getElementById('importFile').click()">匯入備份</button>
-      <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)" />
+    <div class="brand-title">
+      <span>CRYO ARCHIVE // REVIVAL</span>
+      <span class="status-tag">ACTIVE SYS</span>
     </div>
 
     <div class="controls-group">
-      <label class="color-picker-label">背景
-        <input type="color" id="picker-bg" value="#1e1e2e" onchange="updateThemeColor('--bg-color', this.value)" />
+      <button class="secondary" onclick="exportData()">EXPORT.DAT</button>
+      <button class="secondary" onclick="document.getElementById('importFile').click()">LOAD.DAT</button>
+      <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)" />
+    </div>
+
+    <!-- 色彩自訂 -->
+    <div class="controls-group">
+      <label class="color-picker-label">ENV.BG
+        <input type="color" id="picker-bg" value="#002be8" onchange="updateThemeColor('--bg-color', this.value)" />
       </label>
-      <label class="color-picker-label">標題欄
-        <input type="color" id="picker-header" value="#313244" onchange="updateThemeColor('--header-bg', this.value)" />
+      <label class="color-picker-label">PANEL.HEADER
+        <input type="color" id="picker-header" value="#000000" onchange="updateThemeColor('--header-bg', this.value)" />
       </label>
-      <label class="color-picker-label">槽位底色
-        <input type="color" id="picker-cell" value="#181825" onchange="updateThemeColor('--cell-bg', this.value)" />
+      <label class="color-picker-label">CELL.VOID
+        <input type="color" id="picker-cell" value="#031ebd" onchange="updateThemeColor('--cell-bg', this.value)" />
       </label>
     </div>
   </header>
 
-  <!-- 週間排程槽位 -->
+  <!-- 矩陣槽位區域 -->
   <div class="schedule-container" onclick="deselectCard(event)">
     <table class="grid-table">
       <thead>
         <tr>
-          <th class="time-col">時間</th>
-          <th>週一</th>
-          <th>週二</th>
-          <th>週三</th>
-          <th>週四</th>
-          <th>週五</th>
-          <th>週六</th>
-          <th>週日</th>
+          <th class="time-col">T-BLOCK</th>
+          <th>MON // 01</th>
+          <th>TUE // 02</th>
+          <th>WED // 03</th>
+          <th>THU // 04</th>
+          <th>FRI // 05</th>
+          <th>SAT // 06</th>
+          <th>SUN // 07</th>
         </tr>
       </thead>
       <tbody id="schedule-body"></tbody>
     </table>
   </div>
 
-  <!-- 下方卡帶操作台與暫存庫 -->
+  <!-- 下方卡帶製造工廠 -->
   <div class="dock-area">
-    <!-- 操作工具列 -->
     <div class="workbench-toolbar">
-      <!-- 建立卡帶區塊 -->
+      <!-- 建立卡帶 -->
       <div class="workbench-section">
-        <input type="text" id="new-card-text" placeholder="新待辦事項名稱..." style="width: 160px;" />
-        <input type="color" id="new-card-color" value="#a6e3a1" title="選擇預設顏色" />
-        <button onclick="handleCreateCard()">+ 製作卡帶</button>
+        <input type="text" id="new-card-text" placeholder="SPECIFY DIRECTIVE..." style="width: 170px;" />
+        <input type="color" id="new-card-color" value="#ffffff" title="CARTRIDGE COLOR" />
+        <button class="accent" onclick="handleCreateCard()">+ FABRICATE</button>
       </div>
 
       <div class="workbench-divider"></div>
 
-      <!-- 編輯已選取卡帶區塊 -->
+      <!-- 編輯已選定卡帶 -->
       <div class="workbench-section">
-        <span style="font-size: 12px; font-weight: 600;">編輯選中卡帶：</span>
-        <input type="text" id="edit-card-text" placeholder="點選卡帶以編輯..." style="width: 180px;" disabled oninput="handleUpdateSelectedText(this.value)" />
+        <span style="font-size: 10px; font-weight: 900; color: #888;">TARGET CONFIG:</span>
+        <input type="text" id="edit-card-text" placeholder="NO SELECTION" style="width: 170px;" disabled oninput="handleUpdateSelectedText(this.value)" />
         <input type="color" id="edit-card-color" value="#ffffff" disabled onchange="handleUpdateSelectedColor(this.value)" />
-        <button id="btn-duplicate" class="secondary" disabled onclick="handleDuplicateSelected()">複製卡帶</button>
-        <button id="btn-delete" class="danger" disabled onclick="handleDeleteSelected()">刪除</button>
+        <button id="btn-duplicate" class="secondary" disabled onclick="handleDuplicateSelected()">CLONE</button>
+        <button id="btn-delete" class="danger" disabled onclick="handleDeleteSelected()">PURGE</button>
       </div>
 
       <span class="hint-text" style="margin-left: auto;">
-        💡 技巧：按住 <b>Alt</b> 鍵拖曳卡帶可原地複製並投放；點擊卡帶可在操作台修改內容與顏色
+        [ALT + DRAG]: INSTANT CLONE / [CLICK]: ENGAGE WORKBENCH
       </span>
     </div>
 
-    <!-- 底部未排程卡帶暫存庫 -->
+    <!-- 暫存庫 -->
     <div class="dock-slots" id="dock-container" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'dock')" onclick="deselectCard(event)"></div>
   </div>
 
@@ -330,11 +412,11 @@
 
     let state = {
       theme: {
-        "--bg-color": "#1e1e2e",
-        "--header-bg": "#313244",
-        "--cell-bg": "#181825"
+        "--bg-color": "#002be8",
+        "--header-bg": "#000000",
+        "--cell-bg": "#031ebd"
       },
-      cards: {} // cardId: { id, text, color, slot }
+      cards: {}
     };
 
     let draggedCardId = null;
@@ -349,23 +431,21 @@
       updateWorkbenchUI();
     }
 
-    // LocalStorage 持久化
     function saveToStorage() {
-      localStorage.setItem("schedule_hub_data_v2", JSON.stringify(state));
+      localStorage.setItem("schedule_marathon_edition", JSON.stringify(state));
     }
 
     function loadFromStorage() {
-      const saved = localStorage.getItem("schedule_hub_data_v2");
+      const saved = localStorage.getItem("schedule_marathon_edition");
       if (saved) {
         try {
           state = JSON.parse(saved);
         } catch (e) {
-          console.error("載入失敗", e);
+          console.error("LOAD ERROR", e);
         }
       }
     }
 
-    // 主題管理
     function updateThemeColor(cssVar, color) {
       state.theme[cssVar] = color;
       applyTheme();
@@ -381,7 +461,6 @@
       document.getElementById("picker-cell").value = state.theme["--cell-bg"];
     }
 
-    // 建立時間網格
     function renderGrid() {
       const tbody = document.getElementById("schedule-body");
       tbody.innerHTML = "";
@@ -409,7 +488,6 @@
       });
     }
 
-    // 卡帶 DOM 建立
     function createCardElement(card) {
       const div = document.createElement("div");
       div.className = "tape-card" + (card.id === selectedCardId ? " selected" : "");
@@ -417,14 +495,12 @@
       div.draggable = true;
       div.style.backgroundColor = card.color;
 
-      // 拖曳起始判斷是否按下 Alt 鍵進行複製
       div.ondragstart = (e) => {
         draggedCardId = card.id;
         isAltCloneMode = e.altKey;
         e.dataTransfer.setData("text/plain", card.id);
       };
 
-      // 點擊選取以啟用下方操作台
       div.onclick = (e) => {
         e.stopPropagation();
         selectCard(card.id);
@@ -432,7 +508,13 @@
 
       const titleSpan = document.createElement("span");
       titleSpan.textContent = card.text;
+
+      const metaTag = document.createElement("div");
+      metaTag.className = "card-meta-code";
+      metaTag.textContent = card.id.slice(-4);
+
       div.appendChild(titleSpan);
+      div.appendChild(metaTag);
 
       return div;
     }
@@ -456,7 +538,6 @@
       });
     }
 
-    // 拖曳邏輯：一般移動、對調、以及按 Alt 複製
     function allowDrop(e) {
       e.preventDefault();
       if (e.currentTarget.classList) {
@@ -474,17 +555,11 @@
       const isAltPressed = e.altKey || isAltCloneMode;
 
       if (isAltPressed) {
-        // Alt 複製模式：原地產生全新卡帶投放至目標槽位，文字原樣保留
-        const newId = "card_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-        
-        // 若目標槽位已有卡帶，被取代的卡帶退回暫存區
+        const newId = "CRYO_" + Date.now().toString().slice(-6);
         if (targetSlotId !== "dock") {
           const existingCard = Object.values(state.cards).find(c => c.slot === targetSlotId);
-          if (existingCard) {
-            existingCard.slot = "dock";
-          }
+          if (existingCard) existingCard.slot = "dock";
         }
-
         state.cards[newId] = {
           id: newId,
           text: sourceCard.text,
@@ -493,28 +568,23 @@
         };
         selectCard(newId);
       } else {
-        // 一般移動模式：若目標槽位已有卡帶則互換
         const previousSlot = sourceCard.slot;
-
         if (targetSlotId !== "dock") {
           const existingCard = Object.values(state.cards).find(c => c.slot === targetSlotId);
           if (existingCard && existingCard.id !== sourceCard.id) {
             existingCard.slot = previousSlot;
           }
         }
-
         sourceCard.slot = targetSlotId;
         selectCard(sourceCard.id);
       }
 
       draggedCardId = null;
       isAltCloneMode = false;
-
       saveToStorage();
       renderAllCards();
     }
 
-    // 選取卡帶與操作台狀態聯動
     function selectCard(cardId) {
       selectedCardId = cardId;
       updateWorkbenchUI();
@@ -554,12 +624,11 @@
         btnDelete.disabled = true;
 
         textInput.value = "";
-        textInput.placeholder = "點選卡帶以編輯...";
+        textInput.placeholder = "NO SELECTION";
         colorInput.value = "#ffffff";
       }
     }
 
-    // 操作台卡帶建立
     function handleCreateCard() {
       const textInput = document.getElementById("new-card-text");
       const colorInput = document.getElementById("new-card-color");
@@ -570,7 +639,7 @@
         return;
       }
 
-      const id = "card_" + Date.now();
+      const id = "CRYO_" + Date.now().toString().slice(-6);
       state.cards[id] = {
         id: id,
         text: text,
@@ -584,7 +653,6 @@
       renderAllCards();
     }
 
-    // 即時編輯選取卡帶文字與顏色
     function handleUpdateSelectedText(val) {
       if (!selectedCardId || !state.cards[selectedCardId]) return;
       state.cards[selectedCardId].text = val;
@@ -599,25 +667,21 @@
       renderAllCards();
     }
 
-    // 操作台功能：複製（直接複製文字，不加副本字樣）
     function handleDuplicateSelected() {
       if (!selectedCardId || !state.cards[selectedCardId]) return;
-      const original = state.cards[selectedCardId];
-
-      const newId = "card_" + Date.now();
+      const orig = state.cards[selectedCardId];
+      const newId = "CRYO_" + Date.now().toString().slice(-6);
       state.cards[newId] = {
         id: newId,
-        text: original.text,
-        color: original.color,
+        text: orig.text,
+        color: orig.color,
         slot: "dock"
       };
-
       selectCard(newId);
       saveToStorage();
       renderAllCards();
     }
 
-    // 操作台功能：刪除
     function handleDeleteSelected() {
       if (!selectedCardId || !state.cards[selectedCardId]) return;
       delete state.cards[selectedCardId];
@@ -627,22 +691,19 @@
       renderAllCards();
     }
 
-    // 匯出備份 JSON
     function exportData() {
       const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "schedule_backup.json";
+      a.download = "CRYO_SCHEDULE_DUMP.json";
       a.click();
       URL.revokeObjectURL(url);
     }
 
-    // 匯入備份 JSON
     function importData(event) {
       const file = event.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
@@ -654,18 +715,14 @@
             applyTheme();
             renderAllCards();
             updateWorkbenchUI();
-            alert("備份還原成功！");
-          } else {
-            alert("檔案格式不符！");
           }
         } catch (err) {
-          alert("讀取檔案失敗：" + err);
+          alert("SYS_ERR: INVALID ARCHIVE DATA");
         }
       };
       reader.readAsText(file);
     }
 
-    // 按 Enter 快速新增卡帶
     document.getElementById("new-card-text").addEventListener("keydown", (e) => {
       if (e.key === "Enter") handleCreateCard();
     });
