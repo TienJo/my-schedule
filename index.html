@@ -12,6 +12,7 @@
       --border-color: #45475a;
       --text-color: #cdd6f4;
       --dock-bg: #11111b;
+      --active-card-border: #f5e0dc;
     }
 
     * {
@@ -28,13 +29,14 @@
       flex-direction: column;
       height: 100vh;
       overflow: hidden;
+      user-select: none;
     }
 
-    /* 頂部控制面板 */
+    /* 頂部系統設定列 */
     header {
       background-color: var(--header-bg);
       border-bottom: 1px solid var(--border-color);
-      padding: 10px 16px;
+      padding: 8px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -45,7 +47,7 @@
     .controls-group {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
 
     button {
@@ -57,6 +59,7 @@
       font-weight: 600;
       cursor: pointer;
       font-size: 13px;
+      transition: opacity 0.15s;
     }
 
     button.secondary {
@@ -64,8 +67,18 @@
       color: var(--text-color);
     }
 
-    button:hover {
-      opacity: 0.9;
+    button.danger {
+      background-color: #f38ba8;
+      color: #11111b;
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    button:hover:not(:disabled) {
+      opacity: 0.85;
     }
 
     .color-picker-label {
@@ -77,14 +90,28 @@
 
     input[type="color"] {
       border: none;
-      width: 24px;
-      height: 24px;
+      width: 26px;
+      height: 26px;
       border-radius: 4px;
       cursor: pointer;
       background: none;
     }
 
-    /* 日程表滾動區 */
+    input[type="text"] {
+      background-color: #181825;
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: #89b4fa;
+    }
+
+    /* 日程表主顯示區 */
     .schedule-container {
       flex: 1;
       overflow: auto;
@@ -119,7 +146,7 @@
 
     .slot-cell {
       background-color: var(--cell-bg);
-      height: 44px;
+      height: 46px;
       vertical-align: middle;
       padding: 2px;
       transition: background-color 0.15s;
@@ -129,91 +156,111 @@
       background-color: rgba(137, 180, 250, 0.25);
     }
 
-    /* 下方卡帶製作與暫存區 */
+    /* 下方卡帶工作台 */
     .dock-area {
       background-color: var(--dock-bg);
       border-top: 2px solid var(--border-color);
       padding: 10px 16px;
-      height: 140px;
+      height: 200px;
       display: flex;
       flex-direction: column;
+      gap: 10px;
+    }
+
+    /* 操作控制列 */
+    .workbench-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      background-color: #181825;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+
+    .workbench-section {
+      display: flex;
+      align-items: center;
       gap: 8px;
     }
 
-    .dock-header {
-      font-size: 13px;
-      font-weight: 600;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .workbench-divider {
+      width: 1px;
+      height: 22px;
+      background-color: var(--border-color);
     }
 
+    /* 底部卡帶暫存庫 */
     .dock-slots {
       flex: 1;
       display: flex;
-      gap: 8px;
+      gap: 10px;
       overflow-x: auto;
       align-items: center;
-      padding-bottom: 6px;
+      padding: 4px;
+      border-radius: 6px;
+      background-color: rgba(24, 24, 37, 0.5);
+      border: 1px dashed var(--border-color);
     }
 
     /* 卡帶樣式 */
     .tape-card {
-      padding: 6px 10px;
-      border-radius: 4px;
+      padding: 6px 12px;
+      border-radius: 5px;
       font-size: 12px;
       font-weight: 600;
       color: #11111b;
       cursor: grab;
-      user-select: none;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
       width: 95%;
       margin: 0 auto;
+      height: 36px;
+      border: 2px solid transparent;
+      transition: transform 0.1s, border-color 0.1s;
     }
 
     .dock-slots .tape-card {
-      width: 140px;
+      width: 150px;
       flex-shrink: 0;
+    }
+
+    .tape-card.selected {
+      border-color: var(--active-card-border);
+      box-shadow: 0 0 8px var(--active-card-border);
     }
 
     .tape-card:active {
       cursor: grabbing;
-      opacity: 0.6;
     }
 
-    .card-actions {
-      display: flex;
-      gap: 4px;
-      opacity: 0.6;
+    .tape-card span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      pointer-events: none;
     }
 
-    .card-actions span {
-      cursor: pointer;
-      font-size: 12px;
-    }
-
-    .card-actions span:hover {
-      opacity: 1;
-      font-weight: bold;
+    .hint-text {
+      font-size: 11px;
+      color: #a6adc8;
     }
   </style>
 </head>
 <body>
 
-  <!-- 頂部自訂控制欄 -->
+  <!-- 頂部顏色與備份設定 -->
   <header>
     <div class="controls-group">
-      <button onclick="createNewCard()">+ 新增卡帶</button>
+      <span style="font-weight: 700; font-size: 14px;">日程系統設定</span>
       <button class="secondary" onclick="exportData()">匯出備份</button>
       <button class="secondary" onclick="document.getElementById('importFile').click()">匯入備份</button>
       <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)" />
     </div>
 
-    <!-- 色彩自訂器 -->
     <div class="controls-group">
       <label class="color-picker-label">背景
         <input type="color" id="picker-bg" value="#1e1e2e" onchange="updateThemeColor('--bg-color', this.value)" />
@@ -227,8 +274,8 @@
     </div>
   </header>
 
-  <!-- 日程時間槽位網格 -->
-  <div class="schedule-container">
+  <!-- 週間排程槽位 -->
+  <div class="schedule-container" onclick="deselectCard(event)">
     <table class="grid-table">
       <thead>
         <tr>
@@ -246,13 +293,35 @@
     </table>
   </div>
 
-  <!-- 下方卡帶製作暫存區 -->
+  <!-- 下方卡帶操作台與暫存庫 -->
   <div class="dock-area">
-    <div class="dock-header">
-      <span>卡帶暫存庫（未排程）</span>
-      <span style="font-size: 11px; color: #a6adc8;">點擊卡帶 ⚙ 修改 / ⎘ 複製 / ✕ 刪除</span>
+    <!-- 操作工具列 -->
+    <div class="workbench-toolbar">
+      <!-- 建立卡帶區塊 -->
+      <div class="workbench-section">
+        <input type="text" id="new-card-text" placeholder="新待辦事項名稱..." style="width: 160px;" />
+        <input type="color" id="new-card-color" value="#a6e3a1" title="選擇預設顏色" />
+        <button onclick="handleCreateCard()">+ 製作卡帶</button>
+      </div>
+
+      <div class="workbench-divider"></div>
+
+      <!-- 編輯已選取卡帶區塊 -->
+      <div class="workbench-section">
+        <span style="font-size: 12px; font-weight: 600;">編輯選中卡帶：</span>
+        <input type="text" id="edit-card-text" placeholder="點選卡帶以編輯..." style="width: 180px;" disabled oninput="handleUpdateSelectedText(this.value)" />
+        <input type="color" id="edit-card-color" value="#ffffff" disabled onchange="handleUpdateSelectedColor(this.value)" />
+        <button id="btn-duplicate" class="secondary" disabled onclick="handleDuplicateSelected()">複製卡帶</button>
+        <button id="btn-delete" class="danger" disabled onclick="handleDeleteSelected()">刪除</button>
+      </div>
+
+      <span class="hint-text" style="margin-left: auto;">
+        💡 技巧：按住 <b>Alt</b> 鍵拖曳卡帶可原地複製並投放；點擊卡帶可在操作台修改內容與顏色
+      </span>
     </div>
-    <div class="dock-slots" id="dock-container" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'dock')"></div>
+
+    <!-- 底部未排程卡帶暫存庫 -->
+    <div class="dock-slots" id="dock-container" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'dock')" onclick="deselectCard(event)"></div>
   </div>
 
   <script>
@@ -265,26 +334,28 @@
         "--header-bg": "#313244",
         "--cell-bg": "#181825"
       },
-      cards: {} // cardId: { id, text, color, slot: "dock" | "day_slot" }
+      cards: {} // cardId: { id, text, color, slot }
     };
 
     let draggedCardId = null;
+    let isAltCloneMode = false;
+    let selectedCardId = null;
 
-    // 初始化程式
     function init() {
       loadFromStorage();
       renderGrid();
       applyTheme();
       renderAllCards();
+      updateWorkbenchUI();
     }
 
-    // 儲存與讀取 LocalStorage
+    // LocalStorage 持久化
     function saveToStorage() {
-      localStorage.setItem("schedule_hub_data", JSON.stringify(state));
+      localStorage.setItem("schedule_hub_data_v2", JSON.stringify(state));
     }
 
     function loadFromStorage() {
-      const saved = localStorage.getItem("schedule_hub_data");
+      const saved = localStorage.getItem("schedule_hub_data_v2");
       if (saved) {
         try {
           state = JSON.parse(saved);
@@ -294,7 +365,7 @@
       }
     }
 
-    // 主題切換
+    // 主題管理
     function updateThemeColor(cssVar, color) {
       state.theme[cssVar] = color;
       applyTheme();
@@ -310,7 +381,7 @@
       document.getElementById("picker-cell").value = state.theme["--cell-bg"];
     }
 
-    // 建立日程網格
+    // 建立時間網格
     function renderGrid() {
       const tbody = document.getElementById("schedule-body");
       tbody.innerHTML = "";
@@ -338,40 +409,35 @@
       });
     }
 
-    // 卡帶渲染與元件建立
+    // 卡帶 DOM 建立
     function createCardElement(card) {
       const div = document.createElement("div");
-      div.className = "tape-card";
+      div.className = "tape-card" + (card.id === selectedCardId ? " selected" : "");
       div.id = card.id;
       div.draggable = true;
       div.style.backgroundColor = card.color;
 
+      // 拖曳起始判斷是否按下 Alt 鍵進行複製
       div.ondragstart = (e) => {
         draggedCardId = card.id;
+        isAltCloneMode = e.altKey;
         e.dataTransfer.setData("text/plain", card.id);
+      };
+
+      // 點擊選取以啟用下方操作台
+      div.onclick = (e) => {
+        e.stopPropagation();
+        selectCard(card.id);
       };
 
       const titleSpan = document.createElement("span");
       titleSpan.textContent = card.text;
-      titleSpan.style.overflow = "hidden";
-      titleSpan.style.textOverflow = "ellipsis";
-      titleSpan.style.whiteSpace = "nowrap";
-
-      const actions = document.createElement("div");
-      actions.className = "card-actions";
-      actions.innerHTML = `
-        <span title="修改內容與色彩" onclick="editCard('${card.id}')">⚙</span>
-        <span title="複製" onclick="duplicateCard('${card.id}')">⎘</span>
-        <span title="刪除" onclick="deleteCard('${card.id}')">✕</span>
-      `;
-
       div.appendChild(titleSpan);
-      div.appendChild(actions);
+
       return div;
     }
 
     function renderAllCards() {
-      // 清理各槽位與 dock 區
       document.querySelectorAll(".slot-cell").forEach(cell => cell.innerHTML = "");
       document.getElementById("dock-container").innerHTML = "";
 
@@ -390,7 +456,7 @@
       });
     }
 
-    // 拖曳邏輯與自動對調
+    // 拖曳邏輯：一般移動、對調、以及按 Alt 複製
     function allowDrop(e) {
       e.preventDefault();
       if (e.currentTarget.classList) {
@@ -404,82 +470,164 @@
 
       if (!draggedCardId || !state.cards[draggedCardId]) return;
 
-      const currentCard = state.cards[draggedCardId];
-      const previousSlot = currentCard.slot;
+      const sourceCard = state.cards[draggedCardId];
+      const isAltPressed = e.altKey || isAltCloneMode;
 
-      // 若目標槽位已有卡帶，進行位置互換
-      if (targetSlotId !== "dock") {
-        const existingCard = Object.values(state.cards).find(c => c.slot === targetSlotId);
-        if (existingCard && existingCard.id !== currentCard.id) {
-          existingCard.slot = previousSlot;
+      if (isAltPressed) {
+        // Alt 複製模式：原地產生全新卡帶投放至目標槽位，文字原樣保留
+        const newId = "card_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+        
+        // 若目標槽位已有卡帶，被取代的卡帶退回暫存區
+        if (targetSlotId !== "dock") {
+          const existingCard = Object.values(state.cards).find(c => c.slot === targetSlotId);
+          if (existingCard) {
+            existingCard.slot = "dock";
+          }
         }
+
+        state.cards[newId] = {
+          id: newId,
+          text: sourceCard.text,
+          color: sourceCard.color,
+          slot: targetSlotId
+        };
+        selectCard(newId);
+      } else {
+        // 一般移動模式：若目標槽位已有卡帶則互換
+        const previousSlot = sourceCard.slot;
+
+        if (targetSlotId !== "dock") {
+          const existingCard = Object.values(state.cards).find(c => c.slot === targetSlotId);
+          if (existingCard && existingCard.id !== sourceCard.id) {
+            existingCard.slot = previousSlot;
+          }
+        }
+
+        sourceCard.slot = targetSlotId;
+        selectCard(sourceCard.id);
       }
 
-      currentCard.slot = targetSlotId;
       draggedCardId = null;
+      isAltCloneMode = false;
 
       saveToStorage();
       renderAllCards();
     }
 
-    // 卡帶操作：新增、修改、複製、刪除
-    function createNewCard() {
-      const text = prompt("請輸入待辦事項內容：", "新卡帶");
-      if (!text) return;
-
-      const defaultColors = ["#f38ba8", "#fab387", "#f9e2af", "#a6e3a1", "#89dceb", "#cba6f7"];
-      const randomColor = defaultColors[Math.floor(Math.random() * defaultColors.length)];
-
-      const id = "card_" + Date.now();
-      state.cards[id] = { id, text, color: randomColor, slot: "dock" };
-
-      saveToStorage();
+    // 選取卡帶與操作台狀態聯動
+    function selectCard(cardId) {
+      selectedCardId = cardId;
+      updateWorkbenchUI();
       renderAllCards();
     }
 
-    function editCard(id) {
-      const card = state.cards[id];
-      if (!card) return;
-
-      const newText = prompt("修改待辦內容：", card.text);
-      if (newText !== null && newText.trim() !== "") {
-        card.text = newText.trim();
-      }
-
-      const newColor = prompt("輸入顏色 Hex 代碼（例如 #a6e3a1）：", card.color);
-      if (newColor && /^#[0-9A-Fa-f]{6}$/.test(newColor)) {
-        card.color = newColor;
-      }
-
-      saveToStorage();
-      renderAllCards();
-    }
-
-    function duplicateCard(id) {
-      const original = state.cards[id];
-      if (!original) return;
-
-      const newId = "card_" + Date.now();
-      state.cards[newId] = {
-        id: newId,
-        text: original.text + " (副本)",
-        color: original.color,
-        slot: "dock"
-      };
-
-      saveToStorage();
-      renderAllCards();
-    }
-
-    function deleteCard(id) {
-      if (confirm("確定要刪除這張卡帶嗎？")) {
-        delete state.cards[id];
-        saveToStorage();
+    function deselectCard(e) {
+      if (e.target.classList.contains("schedule-container") || 
+          e.target.classList.contains("dock-slots") || 
+          e.target.tagName === "TABLE" ||
+          e.target.tagName === "TD") {
+        selectedCardId = null;
+        updateWorkbenchUI();
         renderAllCards();
       }
     }
 
-    // 匯出與匯入備份
+    function updateWorkbenchUI() {
+      const textInput = document.getElementById("edit-card-text");
+      const colorInput = document.getElementById("edit-card-color");
+      const btnDuplicate = document.getElementById("btn-duplicate");
+      const btnDelete = document.getElementById("btn-delete");
+
+      if (selectedCardId && state.cards[selectedCardId]) {
+        const card = state.cards[selectedCardId];
+        textInput.disabled = false;
+        colorInput.disabled = false;
+        btnDuplicate.disabled = false;
+        btnDelete.disabled = false;
+
+        textInput.value = card.text;
+        colorInput.value = card.color;
+      } else {
+        textInput.disabled = true;
+        colorInput.disabled = true;
+        btnDuplicate.disabled = true;
+        btnDelete.disabled = true;
+
+        textInput.value = "";
+        textInput.placeholder = "點選卡帶以編輯...";
+        colorInput.value = "#ffffff";
+      }
+    }
+
+    // 操作台卡帶建立
+    function handleCreateCard() {
+      const textInput = document.getElementById("new-card-text");
+      const colorInput = document.getElementById("new-card-color");
+      const text = textInput.value.trim();
+
+      if (!text) {
+        textInput.focus();
+        return;
+      }
+
+      const id = "card_" + Date.now();
+      state.cards[id] = {
+        id: id,
+        text: text,
+        color: colorInput.value,
+        slot: "dock"
+      };
+
+      textInput.value = "";
+      selectCard(id);
+      saveToStorage();
+      renderAllCards();
+    }
+
+    // 即時編輯選取卡帶文字與顏色
+    function handleUpdateSelectedText(val) {
+      if (!selectedCardId || !state.cards[selectedCardId]) return;
+      state.cards[selectedCardId].text = val;
+      saveToStorage();
+      renderAllCards();
+    }
+
+    function handleUpdateSelectedColor(val) {
+      if (!selectedCardId || !state.cards[selectedCardId]) return;
+      state.cards[selectedCardId].color = val;
+      saveToStorage();
+      renderAllCards();
+    }
+
+    // 操作台功能：複製（直接複製文字，不加副本字樣）
+    function handleDuplicateSelected() {
+      if (!selectedCardId || !state.cards[selectedCardId]) return;
+      const original = state.cards[selectedCardId];
+
+      const newId = "card_" + Date.now();
+      state.cards[newId] = {
+        id: newId,
+        text: original.text,
+        color: original.color,
+        slot: "dock"
+      };
+
+      selectCard(newId);
+      saveToStorage();
+      renderAllCards();
+    }
+
+    // 操作台功能：刪除
+    function handleDeleteSelected() {
+      if (!selectedCardId || !state.cards[selectedCardId]) return;
+      delete state.cards[selectedCardId];
+      selectedCardId = null;
+      updateWorkbenchUI();
+      saveToStorage();
+      renderAllCards();
+    }
+
+    // 匯出備份 JSON
     function exportData() {
       const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -490,6 +638,7 @@
       URL.revokeObjectURL(url);
     }
 
+    // 匯入備份 JSON
     function importData(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -500,9 +649,11 @@
           const imported = JSON.parse(e.target.result);
           if (imported.cards && imported.theme) {
             state = imported;
+            selectedCardId = null;
             saveToStorage();
             applyTheme();
             renderAllCards();
+            updateWorkbenchUI();
             alert("備份還原成功！");
           } else {
             alert("檔案格式不符！");
@@ -513,6 +664,11 @@
       };
       reader.readAsText(file);
     }
+
+    // 按 Enter 快速新增卡帶
+    document.getElementById("new-card-text").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") handleCreateCard();
+    });
 
     window.onload = init;
   </script>
