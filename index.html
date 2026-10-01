@@ -12,13 +12,16 @@
   <!-- 引入等寬英數輔助字體 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@700&family=Cinzel:wght@700;900&family=EB+Garamond:wght@700;800&display=swap" rel="stylesheet">
   
   <style>
-    /* 讀取同目錄下的 Excess V Straight 字型檔 */
+    /* 讀取同目錄下的 Celtic Garamond the 2nd 字型檔，並提供 ttf / otf 多重路徑支援 */
     @font-face {
-      font-family: 'Excess V Straight';
-      src: url('./Excess V Straight.otf') format('opentype');
+      font-family: 'Celtic Garamond the 2nd';
+      src: url('./Celtic Garamond the 2nd.ttf') format('truetype'),
+           url('./Celtic Garamond the 2nd.otf') format('opentype'),
+           url('./CelticGaramondthe2nd.ttf') format('truetype'),
+           url('./CelticGaramondthe2nd.otf') format('opentype');
       font-weight: normal;
       font-style: normal;
       font-display: swap;
@@ -68,9 +71,9 @@
       z-index: 30;
     }
 
-    /* 大標題：專用 Excess V Straight 字型 */
+    /* 大標題：專用 Celtic Garamond the 2nd 字型 (帶有古典/凱爾特襯線字型備援) */
     .hero-period-display {
-      font-family: 'Excess V Straight', sans-serif !important;
+      font-family: 'Celtic Garamond the 2nd', 'CelticGaramondthe2nd', 'EB Garamond', 'Cinzel', 'Garamond', serif !important;
       font-size: 27px;
       font-weight: normal;
       color: var(--accent-color);
@@ -85,7 +88,7 @@
 
     .hero-period-display span,
     .hero-period-display .slash {
-      font-family: 'Excess V Straight', sans-serif !important;
+      font-family: 'Celtic Garamond the 2nd', 'CelticGaramondthe2nd', 'EB Garamond', 'Cinzel', 'Garamond', serif !important;
     }
 
     .hero-period-display .slash {
