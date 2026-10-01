@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CRYO ARCHIVE // SCHEDULE MATRIX</title>
 
-  <!-- Google API SDK (選配：供雲端同步使用) -->
+  <!-- Google API SDK (供 Google Drive 雲端同步使用) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js" async defer></script>
 
@@ -15,9 +15,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@700&display=swap" rel="stylesheet">
   
   <style>
-    /* 直接讀取同目錄下的字型檔，不再佔用 HTML 空間 */
+    /* 讀取同目錄下的 Excess V Straight 字型檔 */
     @font-face {
-      font-family: 'Excess V';
+      font-family: 'Excess V Straight';
       src: url('./Excess V Straight.otf') format('opentype');
       font-weight: normal;
       font-style: normal;
@@ -26,7 +26,7 @@
 
     /* 全局 CSS 變數：支援三大系統連動 */
     :root {
-      --bg-color: #002be8;     /* 藍色系：底色、槽位底色、藍色按鈕底色 */
+      --bg-color: #002be8;     /* 藍色系：底色、槽位底色、次要按鈕底色 */
       --header-bg: #000000;    /* 黑色系：標題列、導覽列、表頭、底板 */
       --accent-color: #e2ff00; /* 螢光黃系：大標題、TODAY按鈕、時間文字、選取光暈 */
       --text-color: #ffffff;
@@ -68,9 +68,9 @@
       z-index: 30;
     }
 
-    /* 大標題：專用 Taskforce 字型 */
+    /* 大標題：專用 Excess V Straight 字型 */
     .hero-period-display {
-      font-family: 'Taskforce', sans-serif !important;
+      font-family: 'Excess V Straight', sans-serif !important;
       font-size: 27px;
       font-weight: normal;
       color: var(--accent-color);
@@ -85,7 +85,7 @@
 
     .hero-period-display span,
     .hero-period-display .slash {
-      font-family: 'Taskforce', sans-serif !important;
+      font-family: 'Excess V Straight', sans-serif !important;
     }
 
     .hero-period-display .slash {
@@ -160,8 +160,8 @@
       flex-direction: column;
       gap: 10px;
       z-index: 100;
-      min-width: 270px;
-      max-width: 320px;
+      min-width: 280px;
+      max-width: 340px;
     }
 
     .settings-modal.active {
@@ -516,7 +516,7 @@
       <!-- Google 雲端硬碟自動同步面板 -->
       <div class="google-sync-section">
         <label>GOOGLE DRIVE SYNC (APP DATA)</label>
-        <input type="text" id="google-client-id" placeholder="填入 OAuth Client ID..." onchange="handleSaveClientId(this.value)" />
+        <input type="text" id="google-client-id" placeholder="OAuth Client ID..." onchange="handleSaveClientId(this.value)" />
         <div style="display: flex; gap: 4px; margin-top: 4px;">
           <button id="btn-gdrive-auth" class="accent" style="flex: 1;" onclick="handleAuthGoogleDrive()">登入 GOOGLE</button>
           <button id="btn-gdrive-sync" class="secondary" style="flex: 1;" disabled onclick="syncFromGoogleDrive()">雲端載入</button>
@@ -587,6 +587,9 @@
     ];
     const DAY_NAMES = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
+    // 預設 Client ID
+    const DEFAULT_GOOGLE_CLIENT_ID = "865993916714-o0h883itsqd3lvgbatmkgqrqqhbrmuhf.apps.googleusercontent.com";
+
     let state = {
       theme: {
         "--bg-color": "#002be8",
@@ -603,6 +606,7 @@
     let isAltCloneMode = false;
     let selectedCardId = null;
 
+    // Google API 授權與同步狀態
     const GDRIVE_FILE_NAME = "cryo_schedule_data.json";
     const GDRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata";
     let tokenClient = null;
@@ -622,56 +626,64 @@
         if (modal) modal.classList.remove("active");
       });
 
+      // 每分鐘自動檢視時間，過期卡帶即時變為 CELL 底色
       setInterval(() => {
         renderAllCards();
       }, 60000);
     }
 
+    /* ========================================================
+       GOOGLE 雲端儲存 (DRIVE APPDATA) 授權與同步引擎
+       ======================================================== */
     function initGoogleAuthSettings() {
-      const savedClientId = localStorage.getItem("gdrive_sync_client_id") || "";
+      const savedClientId = localStorage.getItem("gdrive_sync_client_id") || DEFAULT_GOOGLE_CLIENT_ID;
       const input = document.getElementById("google-client-id");
       if (input) input.value = savedClientId;
-      if (savedClientId) setupTokenClient(savedClientId);
+      setupTokenClient(savedClientId);
     }
 
     function handleSaveClientId(val) {
-      const clientId = val.trim();
+      const clientId = val.trim() || DEFAULT_GOOGLE_CLIENT_ID;
       localStorage.setItem("gdrive_sync_client_id", clientId);
-      if (clientId) {
-        setupTokenClient(clientId);
-        alert("GOOGLE CLIENT ID 已儲存！請點選「登入 GOOGLE」完成授權。");
-      }
+      setupTokenClient(clientId);
+      alert("GOOGLE CLIENT ID 已儲存！請點選「登入 GOOGLE」完成授權。");
     }
 
     function setupTokenClient(clientId) {
-      if (!window.google || !google.accounts || !google.accounts.oauth2) return;
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: clientId,
-        scope: GDRIVE_SCOPE,
-        callback: async (resp) => {
-          if (resp.error) {
-            console.error("GOOGLE AUTH FAILED", resp);
-            alert("授權失敗：" + resp.error);
-            return;
+      if (!window.google || !google.accounts || !google.accounts.oauth2) {
+        // 若 SDK 尚未下載完成，延遲 300ms 再重試
+        setTimeout(() => setupTokenClient(clientId), 300);
+        return;
+      }
+      try {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: GDRIVE_SCOPE,
+          callback: async (resp) => {
+            if (resp.error) {
+              console.error("GOOGLE AUTH FAILED", resp);
+              alert("授權失敗：" + resp.error);
+              return;
+            }
+            googleAccessToken = resp.access_token;
+            document.getElementById("btn-gdrive-auth").textContent = "已連結 GOOGLE";
+            document.getElementById("btn-gdrive-sync").disabled = false;
+            document.getElementById("sync-status").textContent = "[SYNC: GOOGLE DRIVE LINKED]";
+            await syncFromGoogleDrive();
           }
-          googleAccessToken = resp.access_token;
-          document.getElementById("btn-gdrive-auth").textContent = "已連結 GOOGLE";
-          document.getElementById("btn-gdrive-sync").disabled = false;
-          document.getElementById("sync-status").textContent = "[SYNC: GOOGLE DRIVE LINKED]";
-          await syncFromGoogleDrive();
-        }
-      });
+        });
+      } catch (e) {
+        console.error("TokenClient init error:", e);
+      }
     }
 
     function handleAuthGoogleDrive() {
-      const clientId = (document.getElementById("google-client-id").value || "").trim();
-      if (!clientId) {
-        alert("請先填入您的 Google OAuth Client ID！");
-        return;
-      }
+      const clientId = (document.getElementById("google-client-id").value || DEFAULT_GOOGLE_CLIENT_ID).trim();
       if (!tokenClient) setupTokenClient(clientId);
       if (tokenClient) {
         tokenClient.requestAccessToken({ prompt: "" });
+      } else {
+        alert("Google 認證庫尚未載入完成，請確認網路連線正常或稍候幾秒再試！");
       }
     }
 
@@ -759,6 +771,9 @@
       }
     }
 
+    /* ========================================================
+       本機持久化儲存與防抖雲端連動
+       ======================================================== */
     function loadFromStorage() {
       const saved = localStorage.getItem("schedule_cryo_matrix_clean");
       if (saved) {
