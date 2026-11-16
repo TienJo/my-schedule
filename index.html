@@ -600,16 +600,17 @@
     }
 
     .folder-count-badge {
-      background-color: var(--bg-color);
-      color: #ffffff;
+      background-color: var(--accent-color) !important;
+      color: var(--header-bg) !important;
+      font-weight: 700;
       padding: 1px 5px;
       font-size: 9px;
-      border: 1px solid rgba(255, 255, 255, 0.4);
+      border: 1px solid var(--header-bg);
     }
 
     .day-folder.active .folder-count-badge {
-      background-color: var(--header-bg);
-      color: var(--accent-color);
+      background-color: var(--header-bg) !important;
+      color: var(--accent-color) !important;
       border-color: var(--header-bg);
     }
 
@@ -849,6 +850,56 @@
       align-items: flex-end;
       z-index: 35;
       padding-bottom: 0px;
+      transition: height 0.2s ease, background-color 0.2s ease;
+    }
+
+    /* 拖曳時間表卡帶時，擴大底部手牌區的接收熱區判定範圍 */
+    .spire-hand-stage.dock-drop-active {
+      height: 230px;
+      pointer-events: auto;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0.25) 65%, transparent 100%);
+      border-top: 2px dashed rgba(255, 255, 255, 0.45);
+    }
+
+    .spire-hand-stage.dock-drop-active.drag-over {
+      background: linear-gradient(to top, rgba(168, 176, 144, 0.48) 0%, rgba(168, 176, 144, 0.16) 75%, transparent 100%);
+      border-top: 2px dashed var(--accent-color);
+    }
+
+    .spire-hand-stage.dock-drop-active::before {
+      content: "▼ DROP HERE TO RETURN CARD TO HAND ▼";
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      color: var(--accent-color);
+      background-color: var(--header-bg);
+      padding: 3px 12px;
+      border: 1.5px solid var(--accent-color);
+      pointer-events: none;
+    }
+
+    /* 拖曳時跟隨滑鼠的離屏完整卡牌幻影容器 */
+    .drag-card-ghost-host {
+      position: fixed;
+      top: -9999px;
+      left: -9999px;
+      width: 136px;
+      height: 192px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .drag-card-ghost-host .spire-card-visual {
+      position: relative;
+      bottom: 0;
+      left: 0;
+      transform: none !important;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.65);
     }
 
     .spire-hand-fan {
@@ -960,10 +1011,10 @@
     }
 
     .forge-custom-trigger {
-      background: var(--bg-color);
+      background-color: var(--accent-color) !important;
       border: none;
       border-radius: 8px;
-      color: #ffffff;
+      color: var(--header-bg) !important;
       font-family: var(--font-card);
       font-size: 12.5px;
       font-weight: 800;
@@ -974,14 +1025,13 @@
       gap: 6px;
       text-transform: none;
       letter-spacing: 0.3px;
-      transition: background-color 0.15s ease, color 0.15s ease;
+      transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
     }
 
     .forge-custom-trigger:hover {
       transform: none !important;
       box-shadow: none !important;
-      background-color: var(--accent-color);
-      color: var(--header-bg);
+      opacity: 0.9;
     }
 
     .forge-trigger-arrow {
@@ -993,107 +1043,106 @@
       transform: rotate(180deg);
     }
 
-    /* 無黑框透明容器，讓選項從下往上逐一浮現 */
     .forge-custom-menu {
       position: absolute;
       bottom: calc(100% + 8px);
       left: 0;
-      background: transparent;
-      border: none;
-      box-shadow: none;
-      padding: 0;
-      display: none;
+      min-width: 84px;
+      background-color: var(--header-bg);
+      border-radius: 10px;
+      padding: 4px;
+      display: flex;
       flex-direction: column;
-      gap: 5px;
-      min-width: 96px;
+      gap: 3px;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.6);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(6px);
+      transition: opacity 0.16s ease, transform 0.16s ease;
       z-index: 150;
     }
 
     .forge-minimal-select-wrap.open .forge-custom-menu {
-      display: flex;
-    }
-
-    @keyframes itemPopUpStagger {
-      0% {
-        opacity: 0;
-        transform: translateY(14px) scale(0.88);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
     }
 
     .forge-menu-item {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 7px 14px;
-      border: none;
-      border-radius: 10px;
-      background-color: var(--header-bg);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+      padding: 5px 10px;
+      border-radius: 7px;
       font-family: var(--font-card);
-      font-size: 12.5px;
+      font-size: 12px;
       font-weight: 800;
       color: #ffffff;
+      text-align: center;
       cursor: pointer;
       opacity: 0;
-      animation: itemPopUpStagger 0.24s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-      animation-delay: calc(var(--stagger-idx, 0) * 42ms);
-      transition: background-color 0.14s ease, color 0.14s ease, transform 0.14s ease;
+      transform: translateY(8px);
+      transition: background-color 0.14s ease, color 0.14s ease;
+    }
+
+    .forge-minimal-select-wrap.open .forge-menu-item {
+      animation: staggerSlideUp 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation-delay: calc(var(--stagger-idx, 0) * 32ms);
+    }
+
+    @keyframes staggerSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .forge-menu-item:hover {
-      background-color: var(--bg-color);
-      color: #ffffff;
-      transform: translateY(-2px);
+      background-color: rgba(255, 255, 255, 0.14);
     }
 
     .forge-menu-item.active {
-      background-color: var(--accent-color);
-      color: var(--header-bg);
+      background-color: var(--accent-color) !important;
+      color: var(--header-bg) !important;
     }
 
     .forge-minimal-input {
       background: transparent;
       border: none;
+      outline: none;
       color: #ffffff;
       font-family: var(--font-card);
       font-size: 13px;
       font-weight: 700;
-      padding: 4px 8px;
-      width: 155px;
-      outline: none;
+      width: 175px;
+      padding: 4px 6px;
     }
 
     .forge-minimal-input::placeholder {
-      color: rgba(255, 255, 255, 0.45);
-      font-weight: 600;
+      color: rgba(255, 255, 255, 0.42);
     }
 
     .forge-minimal-check {
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background-color: var(--accent-color);
-      color: var(--header-bg);
+      background-color: var(--accent-color) !important;
+      color: var(--header-bg) !important;
       border: none;
       font-size: 14px;
       font-weight: 900;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       padding: 0;
       cursor: pointer;
-      flex-shrink: 0;
       transition: transform 0.15s ease, opacity 0.15s ease;
     }
 
     .forge-minimal-check:hover {
       transform: scale(1.1) !important;
       box-shadow: none !important;
-      opacity: 0.9;
     }
 
     /* 長按後在卡片上方彈出的三個圓圈操作圖示 */
@@ -1531,9 +1580,15 @@
   </div>
 
   <!-- 底部純懸浮《Slay the Spire》扇形手牌區（無黑色大欄位底板） -->
-  <div class="spire-hand-stage" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'dock')">
+  <div class="spire-hand-stage" id="spire-hand-stage"
+       ondragover="allowDrop(event)"
+       ondragleave="handleDockDragLeave(event)"
+       ondrop="handleDrop(event, 'dock')">
     <div class="spire-hand-fan" id="dock-container"></div>
   </div>
+
+  <!-- 離屏完整卡牌拖曳幻影容器 -->
+  <div class="drag-card-ghost-host" id="drag-card-ghost-host"></div>
 
   <script>
     const TIME_SLOTS = [
@@ -2505,6 +2560,12 @@
         draggedCardId = card.id;
         isAltCloneMode = e.altKey;
         e.dataTransfer.setData("text/plain", card.id);
+        attachFullCardDragGhost(e, card);
+        activateDockDropZone(true);
+      };
+
+      div.ondragend = () => {
+        activateDockDropZone(false);
       };
 
       div.onclick = (e) => {
@@ -3123,6 +3184,11 @@
         draggedCardId = card.id;
         isAltCloneMode = e.altKey;
         e.dataTransfer.setData("text/plain", card.id);
+        attachFullCardDragGhost(e, card);
+      };
+
+      slot.ondragend = () => {
+        activateDockDropZone(false);
       };
 
       slot.onclick = (e) => {
@@ -3234,6 +3300,57 @@
       });
     }
 
+    /* 產生完整的直立怪獸圖鑑卡牌 HTML，並設為拖曳跟隨幻影 (setDragImage) */
+    function buildFullCardInnerHtml(card) {
+      const numCode = parseInt(card.id.replace(/\D/g, "").slice(-4) || "1", 10);
+      const monster = PIXEL_MONSTER_ROSTER[numCode % PIXEL_MONSTER_ROSTER.length];
+      const attrKey = card.attr && CARD_ATTRIBUTES[card.attr] ? card.attr : "study";
+      const attrInfo = CARD_ATTRIBUTES[attrKey];
+      const enSubText = card.enTitle || getFallbackEnglishSub(card.text);
+      const cardPoints = typeof card.points === "number" ? card.points : ((numCode * 17) % 90) + 10;
+      const monsterSvgHtml = buildPixelMonsterSvg(monster);
+
+      return `
+        <div class="spire-card-visual">
+          <div class="monster-header-block">
+            <div class="monster-task-title">${escapeHtml(card.text)}</div>
+            <div class="monster-sub-series">${escapeHtml(enSubText)}</div>
+          </div>
+          <div class="monster-pixel-stage">
+            ${monsterSvgHtml}
+          </div>
+          <div class="monster-footer-row">
+            <div class="monster-logo-stamp">${attrInfo.label}</div>
+            <div class="monster-points-tag">PT.${cardPoints}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function attachFullCardDragGhost(e, card) {
+      const ghostHost = document.getElementById("drag-card-ghost-host");
+      if (!ghostHost || !e.dataTransfer || !e.dataTransfer.setDragImage) return;
+      ghostHost.innerHTML = buildFullCardInnerHtml(card);
+      e.dataTransfer.setDragImage(ghostHost, 68, 96);
+    }
+
+    function activateDockDropZone(active) {
+      const stage = document.getElementById("spire-hand-stage");
+      if (!stage) return;
+      if (active) {
+        stage.classList.add("dock-drop-active");
+      } else {
+        stage.classList.remove("dock-drop-active", "drag-over");
+      }
+    }
+
+    function handleDockDragLeave(e) {
+      const stage = document.getElementById("spire-hand-stage");
+      if (stage && !stage.contains(e.relatedTarget)) {
+        stage.classList.remove("drag-over");
+      }
+    }
+
     function allowDrop(e) {
       e.preventDefault();
       if (e.currentTarget.classList) {
@@ -3243,6 +3360,7 @@
 
     function handleDrop(e, targetSlotId) {
       e.preventDefault();
+      activateDockDropZone(false);
       if (e.currentTarget && e.currentTarget.classList) {
         e.currentTarget.classList.remove("drag-over");
       }
@@ -3280,52 +3398,36 @@
       draggedCardId = null;
       isAltCloneMode = false;
       saveToStorage();
+      renderFolderWave();
       renderAllCards();
     }
 
-    function selectCard(cardId) {
-      selectedCardId = cardId;
-      renderAllCards();
-    }
-
-    function deselectCard(e) {
-      if (chainHasMoved) return;
-      if (e.target.classList.contains("schedule-container") || 
-          e.target.classList.contains("folder-wave-stage") ||
-          e.target.classList.contains("folder-wave-row") ||
-          e.target.classList.contains("drawer-scroll-area") ||
-          e.target.classList.contains("timeline-slot-dropzone") ||
-          e.target.classList.contains("week-slot-cell")) {
-        selectedCardId = null;
-        closeForgePopover();
-        renderAllCards();
-      }
-    }
-
-    /* ========================================================
-       + 號卡牌新增與編輯迷你視窗控制
-       ======================================================== */
     let forgeMode = "create";
-    let forgeEditingId = null;
-    let forgeSelectedAttr = "study";
+    let forgeEditingCardId = null;
+    let selectedForgeAttr = "study";
 
-    function renderAttrDropdownMenu() {
+    function renderForgeAttrMenu() {
       const menu = document.getElementById("forge-custom-menu");
-      if (!menu) return;
-      menu.innerHTML = "";
+      const labelEl = document.getElementById("forge-attr-label");
+      if (!menu || !labelEl) return;
+
+      const currentInfo = CARD_ATTRIBUTES[selectedForgeAttr] || CARD_ATTRIBUTES.study;
+      labelEl.textContent = currentInfo.label;
+
       const entries = Object.entries(CARD_ATTRIBUTES);
       const total = entries.length;
+      menu.innerHTML = "";
+
       entries.forEach(([key, info], idx) => {
         const item = document.createElement("div");
-        item.className = "forge-menu-item" + (key === forgeSelectedAttr ? " active" : "");
-        // 越靠近底部的項目延遲越短（0ms），依序從下往上一個接一個彈出
-        const bottomUpIndex = total - 1 - idx;
-        item.style.setProperty("--stagger-idx", String(bottomUpIndex));
+        item.className = "forge-menu-item" + (key === selectedForgeAttr ? " active" : "");
         item.textContent = info.label;
+        item.style.setProperty("--stagger-idx", String(total - 1 - idx));
         item.onclick = (e) => {
           e.stopPropagation();
-          selectAttrOption(key);
-          closeAttrDropdown();
+          selectedForgeAttr = key;
+          labelEl.textContent = info.label;
+          document.getElementById("forge-attr-dropdown").classList.remove("open");
         };
         menu.appendChild(item);
       });
@@ -3335,117 +3437,119 @@
       e.stopPropagation();
       const wrap = document.getElementById("forge-attr-dropdown");
       if (!wrap) return;
-      const willOpen = !wrap.classList.contains("open");
-      if (willOpen) {
-        renderAttrDropdownMenu();
+      const isOpening = !wrap.classList.contains("open");
+      if (isOpening) {
+        renderForgeAttrMenu();
         wrap.classList.add("open");
       } else {
         wrap.classList.remove("open");
       }
     }
 
-    function closeAttrDropdown() {
-      const wrap = document.getElementById("forge-attr-dropdown");
-      if (wrap) wrap.classList.remove("open");
-    }
-
-    function selectAttrOption(attrKey) {
-      const labelEl = document.getElementById("forge-attr-label");
-      if (CARD_ATTRIBUTES[attrKey]) {
-        forgeSelectedAttr = attrKey;
-        if (labelEl) labelEl.textContent = CARD_ATTRIBUTES[attrKey].label;
-      }
-    }
-
     function openForgePopover(mode = "create", cardId = null) {
+      closeAllRadialMenus();
       forgeMode = mode;
-      forgeEditingId = cardId;
+      forgeEditingCardId = cardId;
+
       const popover = document.getElementById("spire-forge-popover");
-      const textInput = document.getElementById("forge-card-text");
+      const input = document.getElementById("forge-card-text");
+      const dropdown = document.getElementById("forge-attr-dropdown");
+      if (!popover || !input) return;
+
+      if (dropdown) dropdown.classList.remove("open");
 
       if (mode === "edit" && cardId && state.cards[cardId]) {
         const card = state.cards[cardId];
-        const attrKey = card.attr && CARD_ATTRIBUTES[card.attr] ? card.attr : "study";
-        textInput.value = card.text;
-        selectAttrOption(attrKey);
+        selectedForgeAttr = card.attr && CARD_ATTRIBUTES[card.attr] ? card.attr : "study";
+        input.value = card.text || "";
       } else {
-        textInput.value = "";
-        selectAttrOption("study");
+        selectedForgeAttr = "study";
+        input.value = "";
       }
 
-      closeAttrDropdown();
+      renderForgeAttrMenu();
       popover.classList.add("active");
-      setTimeout(() => textInput.focus(), 20);
+      setTimeout(() => {
+        input.focus();
+        input.select();
+      }, 30);
     }
 
     function closeForgePopover() {
-      closeAttrDropdown();
       const popover = document.getElementById("spire-forge-popover");
+      const dropdown = document.getElementById("forge-attr-dropdown");
       if (popover) popover.classList.remove("active");
+      if (dropdown) dropdown.classList.remove("open");
+      forgeEditingCardId = null;
     }
 
     function submitForgeCard() {
-      const textInput = document.getElementById("forge-card-text");
-      const text = textInput.value.trim();
-
+      const input = document.getElementById("forge-card-text");
+      if (!input) return;
+      const text = input.value.trim();
       if (!text) {
-        textInput.focus();
+        input.focus();
         return;
       }
 
-      const selectedAttr = forgeSelectedAttr || "study";
-      const fallbackEn = getFallbackEnglishSub(text);
-
-      if (forgeMode === "edit" && forgeEditingId && state.cards[forgeEditingId]) {
-        const oldText = state.cards[forgeEditingId].text;
-        state.cards[forgeEditingId].text = text;
-        state.cards[forgeEditingId].attr = selectedAttr;
-        state.cards[forgeEditingId].color = "#ffffff";
-        if (typeof state.cards[forgeEditingId].points !== "number") {
-          state.cards[forgeEditingId].points = Math.floor(Math.random() * 90) + 10;
+      if (forgeMode === "edit" && forgeEditingCardId && state.cards[forgeEditingCardId]) {
+        const card = state.cards[forgeEditingCardId];
+        const textChanged = card.text !== text;
+        card.text = text;
+        card.attr = selectedForgeAttr;
+        if (textChanged) {
+          card.enTitle = getFallbackEnglishSub(text);
+          autoTranslateCardTitle(card.id, text);
         }
-        if (oldText !== text || !state.cards[forgeEditingId].enTitle) {
-          state.cards[forgeEditingId].enTitle = fallbackEn;
-          autoTranslateCardTitle(forgeEditingId, text);
-        }
-        selectCard(forgeEditingId);
+        selectCard(card.id);
       } else {
-        const id = "CRYO_" + Date.now().toString().slice(-6);
+        const newId = "CRYO_" + Date.now().toString().slice(-6);
         const randomPoints = Math.floor(Math.random() * 90) + 10;
-        state.cards[id] = {
-          id: id,
+        state.cards[newId] = {
+          id: newId,
           text: text,
-          enTitle: fallbackEn,
-          attr: selectedAttr,
+          enTitle: getFallbackEnglishSub(text),
+          attr: selectedForgeAttr,
           points: randomPoints,
-          color: "#ffffff",
           slot: "dock"
         };
-        autoTranslateCardTitle(id, text);
-        selectCard(id);
+        selectCard(newId);
+        autoTranslateCardTitle(newId, text);
       }
 
       closeForgePopover();
       saveToStorage();
+      renderFolderWave();
+      renderAllCards();
+    }
+
+    function selectCard(cardId) {
+      selectedCardId = cardId;
+      renderAllCards();
+    }
+
+    function deselectCard(e) {
+      if (e && e.target !== e.currentTarget) return;
+      selectedCardId = null;
+      closeAllRadialMenus();
       renderAllCards();
     }
 
     function duplicateCardById(cardId) {
-      const orig = state.cards[cardId];
-      if (!orig) return;
+      const source = state.cards[cardId];
+      if (!source) return;
       const newId = "CRYO_" + Date.now().toString().slice(-6);
       state.cards[newId] = {
+        ...source,
         id: newId,
-        text: orig.text,
-        enTitle: orig.enTitle || getFallbackEnglishSub(orig.text),
-        attr: orig.attr || "study",
         points: Math.floor(Math.random() * 90) + 10,
-        color: orig.color,
         slot: "dock"
       };
       selectCard(newId);
       saveToStorage();
+      renderFolderWave();
       renderAllCards();
+      showToast("已複製卡牌至手牌！");
     }
 
     function deleteCardById(cardId) {
@@ -3455,6 +3559,7 @@
       saveToStorage();
       renderFolderWave();
       renderAllCards();
+      showToast("已刪除卡牌");
     }
 
     document.getElementById("forge-card-text").addEventListener("keydown", (e) => {
