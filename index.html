@@ -53,23 +53,35 @@
       overflow: hidden;
       user-select: none;
       font-family: var(--font-ui);
-      /* 60px x 60px 純正方形棋盤格（無斜向三角形接縫） */
+      position: relative;
+    }
+
+    /* 45度斜向旋轉棋盤背景層（無縫循環往右上角移動） */
+    body::before {
+      content: "";
+      position: fixed;
+      top: -100vmax;
+      left: -100vmax;
+      width: 300vmax;
+      height: 300vmax;
+      z-index: -1;
+      pointer-events: none;
       background-image:
         repeating-conic-gradient(
           var(--grid-alt-color) 0% 25%,
           transparent 0% 50%
         );
       background-size: 120px 120px;
-      background-position: 0px 0px;
-      animation: infiniteGridMove 12s linear infinite;
+      transform: rotate(45deg);
+      animation: infiniteDiagonalGridMove 12s linear infinite;
     }
 
-    @keyframes infiniteGridMove {
+    @keyframes infiniteDiagonalGridMove {
       0% {
         background-position: 0px 0px;
       }
       100% {
-        background-position: 120px -120px;
+        background-position: 0px -120px;
       }
     }
 
