@@ -518,10 +518,6 @@
     </div>
 
     <div class="header-actions">
-      <button class="secondary" onclick="exportData()">EXPORT.DAT</button>
-      <button class="secondary" onclick="document.getElementById('importFile').click()">LOAD.DAT</button>
-      <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)" />
-      
       <button class="icon-btn" onclick="toggleSettingsModal(event)" title="COLOR & SYNC CONFIG">⚙</button>
     </div>
 
@@ -1326,39 +1322,6 @@
       updateWorkbenchUI();
       saveToStorage();
       renderAllCards();
-    }
-
-    function exportData() {
-      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "data.json";
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function importData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const imported = JSON.parse(e.target.result);
-          if (imported.cards && imported.theme) {
-            state = imported;
-            selectedCardId = null;
-            saveToStorage();
-            applyTheme();
-            updateWeekTimeline();
-            updateWorkbenchUI();
-            showToast("檔案匯入成功！");
-          }
-        } catch (err) {
-          showToast("SYS_ERR: 檔案格式錯誤");
-        }
-      };
-      reader.readAsText(file);
     }
 
     document.getElementById("new-card-text").addEventListener("keydown", (e) => {
