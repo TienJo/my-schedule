@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@700&family=Cinzel:wght@700;900&family=EB+Garamond:wght@700;800&display=swap" rel="stylesheet">
   
   <style>
-    /* 讀取同目錄下的 Celtic Garamond the 2nd 字型檔，並提供 ttf / otf 多重路徑支援 */
+    /* 讀取同目錄下的 Celtic Garamond the 2nd 字型檔 */
     @font-face {
       font-family: 'Celtic Garamond the 2nd';
       src: url('./CelticGaramondthe2nd.TTF') format('truetype');
@@ -24,11 +24,12 @@
       font-display: swap;
     }
 
-    /* 全局 CSS 變數：支援三大系統連動 */
+    /* 全局 CSS 變數：支援四大系統顏色連動（含藍白棋盤方格主色與次色） */
     :root {
-      --bg-color: #002be8;     /* 藍色系：底色、槽位底色、次要按鈕底色 */
-      --header-bg: #000000;    /* 黑色系：標題列、導覽列、表頭、底板 */
-      --accent-color: #e2ff00; /* 螢光黃系：大標題、TODAY按鈕、時間文字、選取光暈 */
+      --bg-color: #002be8;       /* 藍色系：棋盤主格色、槽位底色、次要按鈕底色 */
+      --grid-alt-color: #ffffff; /* 方格次色：棋盤交錯格色（預設白色，可於齒輪設定調整） */
+      --header-bg: #000000;      /* 黑色系：標題列、導覽列、表頭、底板 */
+      --accent-color: #e2ff00;   /* 螢光黃系：大標題、TODAY按鈕、時間文字、選取光暈 */
       --text-color: #ffffff;
       
       --font-ui: "Space Mono", "Consolas", "Courier New", monospace;
@@ -50,10 +51,24 @@
       overflow: hidden;
       user-select: none;
       font-family: var(--font-ui);
-      background-image: 
-        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-      background-size: 20px 20px;
+      /* 60px x 60px 純正方形藍白相間棋盤格（無斜向三角形接縫） */
+      background-image:
+        repeating-conic-gradient(
+          var(--grid-alt-color) 0% 25%,
+          transparent 0% 50%
+        );
+      background-size: 120px 120px;
+      background-position: 0px 0px;
+      animation: infiniteGridMove 12s linear infinite;
+    }
+
+    @keyframes infiniteGridMove {
+      0% {
+        background-position: 0px 0px;
+      }
+      100% {
+        background-position: 120px -120px;
+      }
     }
 
     /* 頂部列 */
@@ -160,8 +175,8 @@
       flex-direction: column;
       gap: 10px;
       z-index: 100;
-      min-width: 290px;
-      max-width: 350px;
+      min-width: 300px;
+      max-width: 360px;
     }
 
     .settings-modal.active {
@@ -250,84 +265,338 @@
       color: var(--accent-color);
     }
 
-    /* 矩陣排程主要容器 */
+    /* 主工作區：包含漂浮資料夾波動列與向下展開的時間表 */
     .schedule-container {
       flex: 1;
-      overflow: auto;
-      padding: 6px 14px 12px 14px;
+      overflow: hidden;
+      padding: 10px 14px 12px 14px;
       position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
-    .grid-table {
+    /* 7 日漂浮資料夾波動帶容器（預設在 Y 軸中央，點選後平滑向上推升） */
+    .folder-wave-stage {
+      position: relative;
       width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      table-layout: fixed;
-      border-left: 2px solid var(--header-bg);
-      border-top: 2px solid var(--header-bg);
-      background: var(--header-bg);
+      padding: 14px 6px 10px 6px;
+      flex-shrink: 0;
+      z-index: 15;
+      transform: translateY(0);
+      transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), padding 0.45s ease;
     }
 
-    .grid-table th, .grid-table td {
-      border-right: 1px solid rgba(255, 255, 255, 0.25);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.25);
-      text-align: center;
+    /* 7 日波動串聯背景線 (SVG) */
+    .wave-connector-svg {
+      position: absolute;
+      top: 52%;
+      left: 3%;
+      width: 94%;
+      height: 70px;
+      transform: translateY(-50%);
+      pointer-events: none;
+      z-index: 1;
+      overflow: visible;
     }
 
-    /* 頂部日期表頭（凍結窗格） */
-    .grid-table th {
-      font-family: var(--font-ui);
+    .wave-path-glow {
+      fill: none;
+      stroke: var(--accent-color);
+      stroke-width: 2.5;
+      stroke-dasharray: 8 6;
+      opacity: 0.75;
+      animation: waveFlow 14s linear infinite;
+    }
+
+    .wave-path-base {
+      fill: none;
+      stroke: var(--header-bg);
+      stroke-width: 2;
+      opacity: 0.5;
+    }
+
+    @keyframes waveFlow {
+      to {
+        stroke-dashoffset: -280;
+      }
+    }
+
+    /* 7 個資料夾橫向波浪排列 */
+    .folder-wave-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      position: relative;
+      z-index: 2;
+      align-items: center;
+    }
+
+    /* 漂浮動態 (上下懸浮波浪) */
+    @keyframes folderFloat {
+      0%, 100% {
+        transform: translateY(var(--base-y, 0px));
+      }
+      50% {
+        transform: translateY(calc(var(--base-y, 0px) - 9px));
+      }
+    }
+
+    /* 單一日期資料夾本體 */
+    .day-folder {
+      position: relative;
       background-color: var(--header-bg);
-      color: #ffffff;
-      padding: 7px 4px;
-      font-size: 11px;
+      border: 2px solid #ffffff;
+      box-shadow: 4px 4px 0px var(--header-bg);
+      padding: 11px 10px 9px 10px;
+      margin-top: 12px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 76px;
+      animation: folderFloat 3.4s ease-in-out infinite;
+      transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s, min-height 0.4s ease, padding 0.4s ease;
+    }
+
+    /* 展開狀態下，資料夾稍微緊湊以留出更多時間表空間 */
+    .schedule-container.is-expanded .day-folder {
+      min-height: 62px;
+      padding: 8px 9px 7px 9px;
+      margin-top: 10px;
+    }
+
+    /* 資料夾左上角折角標籤 */
+    .day-folder::before {
+      content: attr(data-tab);
+      position: absolute;
+      top: -13px;
+      left: -2px;
+      height: 13px;
+      padding: 0 8px;
+      background-color: var(--header-bg);
+      border: 2px solid #ffffff;
+      border-bottom: none;
+      font-size: 8.5px;
+      line-height: 11px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.8);
+      letter-spacing: 0.5px;
+      transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+    }
+
+    /* 懸停效果 */
+    .day-folder:hover {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 12px rgba(226, 255, 0, 0.45), 4px 4px 0px var(--header-bg);
+    }
+
+    .day-folder:hover::before {
+      border-color: var(--accent-color);
+      color: var(--accent-color);
+    }
+
+    /* 今日資料夾標記 */
+    .day-folder.is-today {
+      border-color: var(--accent-color);
+    }
+
+    .day-folder.is-today::before {
+      background-color: var(--accent-color);
+      border-color: var(--accent-color);
+      color: var(--header-bg);
+    }
+
+    /* 點選展開中的資料夾（停止漂浮並凸顯亮起） */
+    .day-folder.active {
+      animation-play-state: paused;
+      transform: translateY(-4px) !important;
+      background-color: var(--accent-color);
+      border-color: #ffffff;
+      color: var(--header-bg);
+      box-shadow: 0 0 18px var(--accent-color), 4px 4px 0px var(--header-bg);
+    }
+
+    .day-folder.active::before {
+      background-color: #ffffff;
+      border-color: #ffffff;
+      color: var(--header-bg);
+    }
+
+    /* 拖曳卡帶經過資料夾時的接收高亮 */
+    .day-folder.drag-over {
+      background-color: var(--accent-color) !important;
+      color: var(--header-bg) !important;
+      border-color: #ffffff !important;
+      transform: scale(1.04) !important;
+    }
+
+    .folder-top-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.8px;
-      position: sticky;
-      top: 0;
-      z-index: 15;
-      border-bottom: 2px solid #ffffff;
     }
 
-    .grid-table th.today-header {
-      color: var(--accent-color);
-      border-bottom: 2px solid var(--accent-color);
-    }
-
-    /* 左側時間軸（凍結窗格） */
-    .time-col {
-      font-family: var(--font-ui);
-      width: 75px;
-      min-width: 75px;
-      max-width: 75px;
-      font-size: 11px;
+    .folder-date-num {
+      font-size: 16px;
       font-weight: 700;
+      margin: 2px 0;
+      letter-spacing: 0.5px;
+    }
+
+    .schedule-container.is-expanded .folder-date-num {
+      font-size: 14px;
+      margin: 1px 0;
+    }
+
+    .folder-bottom-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 9.5px;
+      opacity: 0.85;
+      border-top: 1px dashed rgba(255, 255, 255, 0.25);
+      padding-top: 4px;
+      margin-top: 2px;
+    }
+
+    .day-folder.active .folder-bottom-line {
+      border-top-color: rgba(0, 0, 0, 0.3);
+    }
+
+    .folder-count-badge {
+      background-color: var(--bg-color);
+      color: #ffffff;
+      padding: 1px 5px;
+      font-size: 9px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .day-folder.active .folder-count-badge {
       background-color: var(--header-bg);
       color: var(--accent-color);
-      letter-spacing: 0.5px;
-      position: sticky;
-      left: 0;
-      z-index: 14;
-      border-right: 2px solid #ffffff !important;
+      border-color: var(--header-bg);
     }
 
-    th.time-col {
-      z-index: 20 !important;
-      border-bottom: 2px solid #ffffff !important;
+    /* 向下展開的單日時間表抽屜（未展開時高度為 0，點開後平滑長出並把上方資料夾推升至頂部） */
+    .day-drawer-wrapper {
+      flex: 0 0 0px;
+      max-height: 0px;
+      opacity: 0;
+      overflow: hidden;
+      margin-top: 0px;
+      background-color: var(--header-bg);
+      border: 0px solid #ffffff;
+      box-shadow: 4px 4px 0px var(--header-bg);
+      display: flex;
+      flex-direction: column;
+      transform: translateY(-10px);
+      transition:
+        flex-grow 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+        max-height 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.32s ease,
+        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        margin-top 0.45s ease;
     }
 
-    /* 槽位單元格 */
-    .slot-cell {
+    .day-drawer-wrapper.open {
+      flex: 1 1 auto;
+      max-height: 900px;
+      opacity: 1;
+      margin-top: 6px;
+      border-width: 2px;
+      transform: translateY(0);
+    }
+
+    .drawer-header-bar {
+      background-color: var(--header-bg);
+      border-bottom: 2px solid #ffffff;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .drawer-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent-color);
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .drawer-scroll-area {
+      flex: 1;
+      overflow-y: auto;
       background-color: var(--bg-color);
-      height: 48px;
-      vertical-align: middle;
-      padding: 2px;
-      transition: background-color 0.1s;
     }
 
-    .slot-cell.drag-over {
+    /* 展開後的單日時間軸列表 */
+    .day-timeline-list {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .timeline-row {
+      display: flex;
+      align-items: stretch;
+      min-height: 44px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+      transition: background-color 0.12s;
+    }
+
+    .timeline-row:last-child {
+      border-bottom: none;
+    }
+
+    .timeline-time-label {
+      width: 86px;
+      min-width: 86px;
+      background-color: var(--header-bg);
+      color: var(--accent-color);
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 2px solid #ffffff;
+      letter-spacing: 0.6px;
+    }
+
+    .timeline-slot-dropzone {
+      flex: 1;
+      padding: 4px 10px;
+      display: flex;
+      align-items: center;
+      background-color: var(--bg-color);
+      position: relative;
+      transition: background-color 0.12s;
+    }
+
+    .timeline-slot-dropzone:empty::after {
+      content: "— AVAILABLE TIME BLOCK (DROP CARTRIDGE HERE) —";
+      font-size: 9.5px;
+      color: rgba(255, 255, 255, 0.25);
+      letter-spacing: 1px;
+      pointer-events: none;
+    }
+
+    .timeline-slot-dropzone.drag-over {
       background-color: var(--accent-color) !important;
       outline: 2px dashed var(--header-bg);
+    }
+
+    .timeline-slot-dropzone .tape-card {
+      width: 100%;
+      max-width: 560px;
+      margin: 0;
     }
 
     /* 下方卡帶操作台 */
@@ -529,8 +798,12 @@
       </div>
       
       <div class="color-picker-row">
-        <span>藍色系統 (ENV / CELL)</span>
+        <span>棋盤主格 / 槽位底色</span>
         <input type="color" id="picker-bg" value="#002be8" onchange="updateThemeColor('--bg-color', this.value)" />
+      </div>
+      <div class="color-picker-row">
+        <span>棋盤交錯格色 (GRID ALT)</span>
+        <input type="color" id="picker-grid-alt" value="#ffffff" onchange="updateThemeColor('--grid-alt-color', this.value)" />
       </div>
       <div class="color-picker-row">
         <span>黑色系統 (PANEL / BAR)</span>
@@ -572,16 +845,29 @@
     </div>
   </div>
 
-  <!-- 矩陣排程槽位 -->
-  <div class="schedule-container" onclick="deselectCard(event)">
-    <table class="grid-table">
-      <thead>
-        <tr id="schedule-header-row">
-          <th class="time-col">T-BLOCK</th>
-        </tr>
-      </thead>
-      <tbody id="schedule-body"></tbody>
-    </table>
+  <!-- 漂浮資料夾波動帶 + 向下展開單日日程容器 -->
+  <div class="schedule-container" id="schedule-container" onclick="deselectCard(event)">
+    <!-- 7 日波動漂浮資料夾列（預設在 Y 軸中央，點選後平滑向上推升至頂部） -->
+    <div class="folder-wave-stage" id="folder-wave-stage">
+      <svg class="wave-connector-svg" viewBox="0 0 1000 70" preserveAspectRatio="none">
+        <path class="wave-path-base" d="M 30 35 Q 110 8, 190 35 T 350 35 T 510 35 T 670 35 T 830 35 T 970 35" />
+        <path class="wave-path-glow" d="M 30 35 Q 110 8, 190 35 T 350 35 T 510 35 T 670 35 T 830 35 T 970 35" />
+      </svg>
+      <div class="folder-wave-row" id="folder-wave-row"></div>
+    </div>
+
+    <!-- 點選資料夾後向下展開的時間表抽屜 -->
+    <div class="day-drawer-wrapper" id="day-drawer-wrapper">
+      <div class="drawer-header-bar">
+        <div class="drawer-title" id="drawer-title">
+          <span>SELECT A FOLDER ABOVE</span>
+        </div>
+        <button class="secondary" onclick="closeDayDrawer(event)">▲ 收合至中央</button>
+      </div>
+      <div class="drawer-scroll-area" id="drawer-scroll-area">
+        <div class="day-timeline-list" id="day-timeline-list"></div>
+      </div>
+    </div>
   </div>
 
   <!-- 無干擾系統通知氣泡 -->
@@ -636,6 +922,7 @@
     let state = {
       theme: {
         "--bg-color": "#002be8",
+        "--grid-alt-color": "#ffffff",
         "--header-bg": "#000000",
         "--accent-color": "#e2ff00"
       },
@@ -644,6 +931,7 @@
 
     let currentAnchorDate = new Date();
     let displayedWeekDates = [];
+    let expandedDateKey = null; // 初始為 null：所有資料夾在畫面 Y 軸正中央懸浮待命
 
     let draggedCardId = null;
     let isAltCloneMode = false;
@@ -774,12 +1062,6 @@
           scope: GDRIVE_SCOPE,
           callback: async (resp) => {
             if (resp.error) {
-              // 若靜默續期失敗（例如使用者撤銷授權或瀏覽器阻擋第三方 Cookie），優雅降級為未登入狀態
-              if (resp.error === "interaction_required" || resp.error === "login_required") {
-                console.info("Silent login requires user interaction.");
-                updateGoogleConnectedUI(false);
-                return;
-              }
               console.error("GOOGLE AUTH FAILED", resp);
               showToast("授權失敗：" + resp.error);
               return;
@@ -814,7 +1096,6 @@
       const clientId = (document.getElementById("google-client-id").value || DEFAULT_GOOGLE_CLIENT_ID).trim();
       if (!tokenClient) setupTokenClient(clientId, false);
       if (tokenClient) {
-        // 使用者主動點擊登入時，允許跳出選擇帳號視窗（若已授權過則直接完成）
         tokenClient.requestAccessToken({ prompt: "" });
       } else {
         showToast("Google 認證庫載入中，請稍候兩秒再點一次！");
@@ -845,7 +1126,6 @@
           headers: { Authorization: `Bearer ${googleAccessToken}` }
         });
 
-        // 若 Token 意外失效（401），自動觸發一次靜默重新授權
         if (listRes.status === 401) {
           googleAccessToken = null;
           localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
@@ -864,8 +1144,13 @@
 
           if (cloudState && cloudState.cards) {
             state = cloudState;
+            if (!state.theme["--grid-alt-color"]) {
+              state.theme["--grid-alt-color"] = "#ffffff";
+            }
             saveToStorage(false);
             applyTheme();
+            renderFolderWave();
+            renderExpandedDrawer();
             renderAllCards();
             document.getElementById("sync-status").textContent = "[SYNC: CLOUD SYNCED]";
             return;
@@ -946,7 +1231,13 @@
       const saved = localStorage.getItem("schedule_cryo_matrix_clean");
       if (saved) {
         try {
-          state = JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          state = parsed;
+          if (!state.theme) state.theme = {};
+          if (!state.theme["--bg-color"]) state.theme["--bg-color"] = "#002be8";
+          if (!state.theme["--grid-alt-color"]) state.theme["--grid-alt-color"] = "#ffffff";
+          if (!state.theme["--header-bg"]) state.theme["--header-bg"] = "#000000";
+          if (!state.theme["--accent-color"]) state.theme["--accent-color"] = "#e2ff00";
         } catch (e) {
           console.error("LOAD ERROR", e);
         }
@@ -982,6 +1273,7 @@
         document.documentElement.style.setProperty(key, val);
       }
       if (document.getElementById("picker-bg")) document.getElementById("picker-bg").value = state.theme["--bg-color"] || "#002be8";
+      if (document.getElementById("picker-grid-alt")) document.getElementById("picker-grid-alt").value = state.theme["--grid-alt-color"] || "#ffffff";
       if (document.getElementById("picker-header")) document.getElementById("picker-header").value = state.theme["--header-bg"] || "#000000";
       if (document.getElementById("picker-accent")) document.getElementById("picker-accent").value = state.theme["--accent-color"] || "#e2ff00";
     }
@@ -1028,20 +1320,30 @@
 
     function navigateWeek(direction) {
       currentAnchorDate.setDate(currentAnchorDate.getDate() + direction * 7);
-      updateWeekTimeline();
+      if (expandedDateKey && displayedWeekDates.length === 7) {
+        const prevIdx = displayedWeekDates.findIndex(d => formatDateKey(d) === expandedDateKey);
+        updateWeekTimeline(prevIdx >= 0 ? prevIdx : 0);
+      } else {
+        updateWeekTimeline(null);
+      }
     }
 
     function navigateMonth(direction) {
       currentAnchorDate.setMonth(currentAnchorDate.getMonth() + direction);
-      updateWeekTimeline();
+      if (expandedDateKey && displayedWeekDates.length === 7) {
+        const prevIdx = displayedWeekDates.findIndex(d => formatDateKey(d) === expandedDateKey);
+        updateWeekTimeline(prevIdx >= 0 ? prevIdx : 0);
+      } else {
+        updateWeekTimeline(null);
+      }
     }
 
     function jumpToCurrentDate() {
       currentAnchorDate = new Date();
-      updateWeekTimeline();
+      updateWeekTimeline("today");
     }
 
-    function updateWeekTimeline() {
+    function updateWeekTimeline(targetSelectMode = null) {
       const monday = getMonday(currentAnchorDate);
       displayedWeekDates = [];
 
@@ -1060,58 +1362,172 @@
         <span>${year}</span><span class="slash">//</span><span>MONTH ${month}</span><span class="slash">//</span><span>WEEK ${weekOfMonth}</span>
       `;
 
-      renderHeaderRow();
-      renderGridBody();
+      if (targetSelectMode === "today") {
+        const todayStr = formatDateKey(new Date());
+        const todayMatch = displayedWeekDates.find(d => formatDateKey(d) === todayStr);
+        expandedDateKey = todayMatch ? todayStr : formatDateKey(displayedWeekDates[0]);
+      } else if (typeof targetSelectMode === "number" && displayedWeekDates[targetSelectMode]) {
+        expandedDateKey = formatDateKey(displayedWeekDates[targetSelectMode]);
+      } else if (targetSelectMode === null) {
+        expandedDateKey = null;
+      }
+
+      renderFolderWave();
+      renderExpandedDrawer();
       renderAllCards();
     }
 
-    function renderHeaderRow() {
-      const headerRow = document.getElementById("schedule-header-row");
-      headerRow.innerHTML = '<th class="time-col">T-BLOCK</th>';
+    /* 渲染 7 日漂浮波動資料夾列 */
+    function renderFolderWave() {
+      const waveRow = document.getElementById("folder-wave-row");
+      waveRow.innerHTML = "";
 
       const todayStr = formatDateKey(new Date());
+      const waveOffsets = [-7, 4, -5, 7, -4, 5, -6];
 
       displayedWeekDates.forEach((d, idx) => {
-        const th = document.createElement("th");
         const dateKey = formatDateKey(d);
         const mmdd = `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+        const dayCardsCount = Object.values(state.cards).filter(c => c.slot && c.slot.startsWith(dateKey + "_")).length;
+
+        const folder = document.createElement("div");
+        folder.className = "day-folder";
+        folder.dataset.tab = `DIR_0${idx + 1}`;
+        folder.dataset.dateKey = dateKey;
+
+        folder.style.setProperty("--base-y", `${waveOffsets[idx]}px`);
+        folder.style.animationDelay = `${idx * -0.45}s`;
 
         if (dateKey === todayStr) {
-          th.classList.add("today-header");
+          folder.classList.add("is-today");
+        }
+        if (dateKey === expandedDateKey) {
+          folder.classList.add("active");
         }
 
-        th.textContent = `${DAY_NAMES[idx]} // ${mmdd}`;
-        headerRow.appendChild(th);
+        folder.innerHTML = `
+          <div class="folder-top-line">
+            <span>${DAY_NAMES[idx]}</span>
+            <span>${dateKey === todayStr ? "★ TODAY" : "ARCH"}</span>
+          </div>
+          <div class="folder-date-num">${mmdd}</div>
+          <div class="folder-bottom-line">
+            <span>${dateKey === expandedDateKey ? "▼ OPEN" : "▶ CLICK"}</span>
+            <span class="folder-count-badge">${dayCardsCount} TAPE</span>
+          </div>
+        `;
+
+        folder.onclick = (e) => {
+          e.stopPropagation();
+          toggleDayFolder(dateKey);
+        };
+
+        folder.ondragover = (e) => {
+          e.preventDefault();
+          folder.classList.add("drag-over");
+        };
+        folder.ondragleave = () => {
+          folder.classList.remove("drag-over");
+        };
+        folder.ondrop = (e) => {
+          e.preventDefault();
+          folder.classList.remove("drag-over");
+          handleDropOntoFolder(e, dateKey);
+        };
+
+        waveRow.appendChild(folder);
       });
     }
 
-    function renderGridBody() {
-      const tbody = document.getElementById("schedule-body");
-      tbody.innerHTML = "";
+    function toggleDayFolder(dateKey) {
+      if (expandedDateKey === dateKey) {
+        expandedDateKey = null;
+      } else {
+        expandedDateKey = dateKey;
+      }
+      renderFolderWave();
+      renderExpandedDrawer();
+      renderAllCards();
+    }
+
+    function closeDayDrawer(e) {
+      if (e) e.stopPropagation();
+      expandedDateKey = null;
+      renderFolderWave();
+      renderExpandedDrawer();
+    }
+
+    /* 渲染向下展開的單日時間表抽屜與動畫狀態切換 */
+    function renderExpandedDrawer() {
+      const container = document.getElementById("schedule-container");
+      const drawer = document.getElementById("day-drawer-wrapper");
+      const timelineList = document.getElementById("day-timeline-list");
+      const titleEl = document.getElementById("drawer-title");
+
+      if (!expandedDateKey) {
+        container.classList.remove("is-expanded");
+        drawer.classList.remove("open");
+        return;
+      }
+
+      const dayIdx = displayedWeekDates.findIndex(d => formatDateKey(d) === expandedDateKey);
+      const dayName = dayIdx >= 0 ? DAY_NAMES[dayIdx] : "DAY";
+
+      container.classList.add("is-expanded");
+      drawer.classList.add("open");
+      titleEl.innerHTML = `
+        <span>📂 DIRECTORY // ${expandedDateKey} (${dayName})</span>
+        <span style="font-size: 10px; color: #aaa;">[07:00 - 23:00 TIMELINE]</span>
+      `;
+
+      timelineList.innerHTML = "";
 
       TIME_SLOTS.forEach((time, sIdx) => {
-        const row = document.createElement("tr");
+        const row = document.createElement("div");
+        row.className = "timeline-row";
 
-        const timeTd = document.createElement("td");
-        timeTd.className = "time-col";
-        timeTd.textContent = time;
-        row.appendChild(timeTd);
+        const timeLabel = document.createElement("div");
+        timeLabel.className = "timeline-time-label";
+        timeLabel.textContent = time;
 
-        displayedWeekDates.forEach((d) => {
-          const td = document.createElement("td");
-          td.className = "slot-cell";
-          const dateKey = formatDateKey(d);
-          const slotId = `${dateKey}_${sIdx}`;
-          td.dataset.slotId = slotId;
+        const dropzone = document.createElement("div");
+        dropzone.className = "timeline-slot-dropzone";
+        const slotId = `${expandedDateKey}_${sIdx}`;
+        dropzone.dataset.slotId = slotId;
 
-          td.ondragover = (e) => allowDrop(e);
-          td.ondragleave = (e) => e.currentTarget.classList.remove("drag-over");
-          td.ondrop = (e) => handleDrop(e, slotId);
-          row.appendChild(td);
-        });
+        dropzone.ondragover = (e) => allowDrop(e);
+        dropzone.ondragleave = (e) => e.currentTarget.classList.remove("drag-over");
+        dropzone.ondrop = (e) => handleDrop(e, slotId);
 
-        tbody.appendChild(row);
+        row.appendChild(timeLabel);
+        row.appendChild(dropzone);
+        timelineList.appendChild(row);
       });
+    }
+
+    /* 將卡帶直接拖曳丟入某日資料夾時，自動分配到該日第一個空閒時段並展開該資料夾 */
+    function handleDropOntoFolder(e, dateKey) {
+      if (!draggedCardId || !state.cards[draggedCardId]) return;
+
+      let targetSlotId = null;
+      for (let sIdx = 0; sIdx < TIME_SLOTS.length; sIdx++) {
+        const candidateSlot = `${dateKey}_${sIdx}`;
+        const isOccupied = Object.values(state.cards).some(c => c.slot === candidateSlot);
+        if (!isOccupied) {
+          targetSlotId = candidateSlot;
+          break;
+        }
+      }
+
+      if (!targetSlotId) {
+        targetSlotId = `${dateKey}_0`;
+      }
+
+      expandedDateKey = dateKey;
+      renderFolderWave();
+      renderExpandedDrawer();
+      handleDrop(e, targetSlotId);
+      showToast(`已將卡帶排入 ${dateKey} 時程並展開資料夾！`);
     }
 
     function createCardElement(card) {
@@ -1155,7 +1571,7 @@
     }
 
     function renderAllCards() {
-      document.querySelectorAll(".slot-cell").forEach(cell => cell.innerHTML = "");
+      document.querySelectorAll(".timeline-slot-dropzone").forEach(cell => cell.innerHTML = "");
       document.getElementById("dock-container").innerHTML = "";
 
       Object.values(state.cards).forEach(card => {
@@ -1167,6 +1583,15 @@
           if (targetSlot) {
             targetSlot.appendChild(el);
           }
+        }
+      });
+
+      displayedWeekDates.forEach(d => {
+        const dateKey = formatDateKey(d);
+        const count = Object.values(state.cards).filter(c => c.slot && c.slot.startsWith(dateKey + "_")).length;
+        const folderEl = document.querySelector(`.day-folder[data-date-key="${dateKey}"] .folder-count-badge`);
+        if (folderEl) {
+          folderEl.textContent = `${count} TAPE`;
         }
       });
     }
@@ -1226,9 +1651,11 @@
 
     function deselectCard(e) {
       if (e.target.classList.contains("schedule-container") || 
-          e.target.classList.contains("dock-slots") || 
-          e.target.tagName === "TABLE" ||
-          e.target.tagName === "TD") {
+          e.target.classList.contains("folder-wave-stage") ||
+          e.target.classList.contains("folder-wave-row") ||
+          e.target.classList.contains("drawer-scroll-area") ||
+          e.target.classList.contains("timeline-slot-dropzone") ||
+          e.target.classList.contains("dock-slots")) {
         selectedCardId = null;
         updateWorkbenchUI();
         renderAllCards();
@@ -1321,6 +1748,7 @@
       selectedCardId = null;
       updateWorkbenchUI();
       saveToStorage();
+      renderFolderWave();
       renderAllCards();
     }
 
