@@ -9,30 +9,32 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js" async defer></script>
 
-  <!-- 引入等寬英數輔助字體 -->
+  <!-- 引入等寬英數輔助字體與備援字體 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@700&family=Cinzel:wght@700;900&family=EB+Garamond:wght@700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@700&family=Luckiest+Guy&display=swap" rel="stylesheet">
   
   <style>
-    /* 讀取同目錄下的 Celtic Garamond the 2nd 字型檔 */
+    /* 讀取同目錄下的 Super Mario 64.ttf 字型檔（支援含空格與無空格路徑） */
     @font-face {
-      font-family: 'Celtic Garamond the 2nd';
-      src: url('./CelticGaramondthe2nd.TTF') format('truetype');
+      font-family: 'Super Mario 64';
+      src: url('./Super Mario 64.ttf') format('truetype'),
+           url('./SuperMario64.ttf') format('truetype');
       font-weight: normal;
       font-style: normal;
       font-display: swap;
     }
 
-    /* 全局 CSS 變數：支援四大系統顏色連動（含藍白棋盤方格主色與次色） */
+    /* 全局 CSS 變數：支援四大系統顏色連動（含棋盤方格主色與次色） */
     :root {
       --bg-color: #002be8;       /* 藍色系：棋盤主格色、槽位底色、次要按鈕底色 */
       --grid-alt-color: #ffffff; /* 方格次色：棋盤交錯格色（預設白色，可於齒輪設定調整） */
       --header-bg: #000000;      /* 黑色系：標題列、導覽列、表頭、底板 */
-      --accent-color: #e2ff00;   /* 螢光黃系：大標題、TODAY按鈕、時間文字、選取光暈 */
+      --accent-color: #e2ff00;   /* 螢光黃系：TODAY按鈕、時間文字、選取光暈 */
       --text-color: #ffffff;
       
       --font-ui: "Space Mono", "Consolas", "Courier New", monospace;
+      --font-mario: 'Super Mario 64', 'Luckiest Guy', Impact, sans-serif;
       --font-card: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", "Noto Sans TC", "Segoe UI", sans-serif;
     }
 
@@ -51,7 +53,7 @@
       overflow: hidden;
       user-select: none;
       font-family: var(--font-ui);
-      /* 60px x 60px 純正方形藍白相間棋盤格（無斜向三角形接縫） */
+      /* 60px x 60px 純正方形棋盤格（無斜向三角形接縫） */
       background-image:
         repeating-conic-gradient(
           var(--grid-alt-color) 0% 25%,
@@ -71,11 +73,12 @@
       }
     }
 
-    /* 頂部列 */
+    /* 頂部列（包含展開後左上角漸顯的月份週次標題 + 右側同步狀態與設定） */
     header {
       background-color: var(--header-bg);
       border-bottom: 2px solid var(--header-bg);
-      padding: 6px 14px 4px 14px;
+      padding: 6px 14px;
+      min-height: 44px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -83,35 +86,65 @@
       z-index: 30;
     }
 
-    /* 大標題：專用 Celtic Garamond the 2nd 字型 (帶有古典/凱爾特襯線字型備援) */
-    .hero-period-display {
-      font-family: 'Celtic Garamond the 2nd', 'CelticGaramondthe2nd', 'EB Garamond', 'Cinzel', 'Garamond', serif !important;
-      font-size: 27px;
-      font-weight: normal;
-      color: var(--accent-color);
+    /* 左上角標題（資料夾未打開時隱藏；資料夾打開上移時慢慢浮現） */
+    .header-corner-period {
+      font-family: var(--font-mario);
+      font-size: 22px;
+      color: #ffffff;
+      letter-spacing: 1px;
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-left: 4px;
-      line-height: 1;
-      text-transform: uppercase;
-      text-shadow: 0 0 3px var(--accent-color);
+      gap: 10px;
+      opacity: 0;
+      transform: translate(-14px, 16px) scale(0.92);
+      pointer-events: none;
+      transition:
+        opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.12s,
+        transform 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.12s;
+      text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.85);
     }
 
-    .hero-period-display span,
-    .hero-period-display .slash {
-      font-family: 'Celtic Garamond the 2nd', 'CelticGaramondthe2nd', 'EB Garamond', 'Cinzel', 'Garamond', serif !important;
+    .header-corner-period.visible {
+      opacity: 1;
+      transform: translate(0, 0) scale(1);
+      pointer-events: auto;
     }
 
-    .hero-period-display .slash {
+    .corner-nav-btn {
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-family: var(--font-mario);
+      font-size: 15px;
+      padding: 2px 5px;
+      cursor: pointer;
+      transition: color 0.15s, transform 0.15s;
+    }
+
+    .corner-nav-btn:hover {
       color: var(--accent-color);
-      margin: 0 2px;
+      transform: scale(1.15);
+      box-shadow: none;
     }
 
-    .header-actions {
+    .header-right-group {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 10px;
+      margin-left: auto;
+    }
+
+    .lock-status {
+      font-family: var(--font-ui);
+      font-size: 10px;
+      color: #888888;
+      letter-spacing: 1px;
+      font-weight: 700;
+      transition: color 0.2s;
+    }
+
+    .lock-status.linked {
+      color: var(--accent-color);
     }
 
     button {
@@ -165,7 +198,7 @@
     /* 齒輪自訂選單彈窗 */
     .settings-modal {
       position: absolute;
-      top: 48px;
+      top: 46px;
       right: 14px;
       background: var(--header-bg);
       border: 2px solid #ffffff;
@@ -234,38 +267,7 @@
       background: none;
     }
 
-    /* 週次巡航列 */
-    .calendar-nav-bar {
-      background-color: var(--header-bg);
-      border-bottom: 2px solid var(--header-bg);
-      padding: 4px 14px 6px 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      z-index: 25;
-    }
-
-    .nav-section {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .lock-status {
-      font-family: var(--font-ui);
-      font-size: 10px;
-      color: #777777;
-      letter-spacing: 1px;
-      font-weight: 700;
-      transition: color 0.2s;
-    }
-
-    .lock-status.linked {
-      color: var(--accent-color);
-    }
-
-    /* 主工作區：包含漂浮資料夾波動列與向下展開的時間表 */
+    /* 主工作區：包含中央浮動大標題、漂浮資料夾波動列與向下展開的時間表 */
     .schedule-container {
       flex: 1;
       overflow: hidden;
@@ -276,15 +278,125 @@
       justify-content: center;
     }
 
-    /* 7 日漂浮資料夾波動帶容器（預設在 Y 軸中央，點選後平滑向上推升） */
+    /* ========================================================
+       中央 Super Mario 64 風格月份 & 週次浮動大標題
+       ======================================================== */
+    .hero-center-stage {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translate(-50%, 0) scale(1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      opacity: 1;
+      pointer-events: auto;
+      transition:
+        opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* 當資料夾被點開並向上移動時，中央大標題淡出並往左上方向收隱 */
+    .schedule-container.is-expanded .hero-center-stage {
+      opacity: 0;
+      transform: translate(-120%, -45px) scale(0.55);
+      pointer-events: none;
+    }
+
+    .mario-month-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .mario-month-text {
+      font-family: var(--font-mario);
+      font-size: clamp(64px, 8.5vw, 108px);
+      line-height: 0.92;
+      color: #ffffff;
+      letter-spacing: 2px;
+      text-shadow:
+        4px 5px 0px rgba(0, 0, 0, 0.65),
+        0px 0px 18px rgba(0, 0, 0, 0.35);
+      transform: rotate(-2deg);
+    }
+
+    .mario-week-label {
+      font-family: var(--font-mario);
+      font-size: clamp(18px, 2.2vw, 24px);
+      color: #ffffff;
+      letter-spacing: 1.5px;
+      margin-top: 2px;
+      text-shadow: 2px 3px 0px rgba(0, 0, 0, 0.7);
+    }
+
+    .mario-week-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 2px;
+    }
+
+    .mario-week-num {
+      font-family: var(--font-mario);
+      font-size: clamp(32px, 4vw, 46px);
+      line-height: 1;
+      color: #ffffff;
+      text-shadow: 3px 4px 0px rgba(0, 0, 0, 0.7);
+    }
+
+    /* 白色三角切換箭頭按鈕 */
+    .mario-arrow-btn {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .mario-arrow-btn svg {
+      fill: #ffffff;
+      filter: drop-shadow(2px 3px 0px rgba(0, 0, 0, 0.7));
+      transition: fill 0.15s;
+    }
+
+    .mario-arrow-btn:hover {
+      transform: scale(1.22) !important;
+      box-shadow: none !important;
+    }
+
+    .mario-arrow-btn:hover svg {
+      fill: var(--accent-color);
+    }
+
+    .mario-arrow-btn:active {
+      transform: scale(0.95) !important;
+    }
+
+    /* 7 日漂浮資料夾波動帶容器（未展開時略偏中下方留出大標題空間，點選後平滑向上推升） */
     .folder-wave-stage {
       position: relative;
       width: 100%;
       padding: 14px 6px 10px 6px;
+      margin-top: 115px;
       flex-shrink: 0;
       z-index: 15;
-      transform: translateY(0);
-      transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), padding 0.45s ease;
+      transition:
+        margin-top 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+        padding 0.45s ease;
+    }
+
+    .schedule-container.is-expanded .folder-wave-stage {
+      margin-top: 0px;
+      padding: 6px 6px 6px 6px;
     }
 
     /* 7 日波動串聯背景線 (SVG) */
@@ -481,7 +593,7 @@
       border-color: var(--header-bg);
     }
 
-    /* 向下展開的單日時間表抽屜（未展開時高度為 0，點開後平滑長出並把上方資料夾推升至頂部） */
+    /* 向下展開的單日時間表抽屜 */
     .day-drawer-wrapper {
       flex: 0 0 0px;
       max-height: 0px;
@@ -753,7 +865,7 @@
       font-weight: 700;
     }
 
-    /* 系統狀態通知條 (取代原生 alert) */
+    /* 系統狀態通知條 */
     .system-toast {
       position: fixed;
       bottom: 202px;
@@ -780,13 +892,21 @@
 </head>
 <body>
 
-  <!-- 頂部列 -->
+  <!-- 頂部列：展開資料夾後左上角慢慢浮現月份週次，右側為 TODAY、同步狀態與設定 -->
   <header>
-    <div class="hero-period-display" id="period-display">
-      <span>2026</span><span class="slash">//</span><span>MONTH 09</span><span class="slash">//</span><span>WEEK 03</span>
+    <div class="header-corner-period" id="corner-period-display">
+      <button class="corner-nav-btn" onclick="navigateMonth(-1)" title="上一月">◀</button>
+      <span id="corner-month-text">Nov.</span>
+      <button class="corner-nav-btn" onclick="navigateMonth(1)" title="下一月">▶</button>
+      <span style="opacity: 0.5; font-size: 16px;">/</span>
+      <button class="corner-nav-btn" onclick="navigateWeek(-1)" title="上一週">◀</button>
+      <span id="corner-week-text">week 3</span>
+      <button class="corner-nav-btn" onclick="navigateWeek(1)" title="下一週">▶</button>
     </div>
 
-    <div class="header-actions">
+    <div class="header-right-group">
+      <button class="accent" onclick="jumpToCurrentDate()">TODAY</button>
+      <div class="lock-status" id="sync-status">[SYNC: LOCAL DATA PERSISTED]</div>
       <button class="icon-btn" onclick="toggleSettingsModal(event)" title="COLOR & SYNC CONFIG">⚙</button>
     </div>
 
@@ -830,24 +950,33 @@
     </div>
   </header>
 
-  <!-- 週次導覽列 -->
-  <div class="calendar-nav-bar">
-    <div class="nav-section">
-      <button class="secondary" onclick="navigateMonth(-1)">◀ PREV MONTH</button>
-      <button class="secondary" onclick="navigateWeek(-1)">◀ PREV WEEK</button>
-      <button class="accent" onclick="jumpToCurrentDate()">TODAY</button>
-      <button class="secondary" onclick="navigateWeek(1)">NEXT WEEK ▶</button>
-      <button class="secondary" onclick="navigateMonth(1)">NEXT MONTH ▶</button>
-    </div>
-
-    <div class="lock-status" id="sync-status">
-      [SYNC: LOCAL DATA PERSISTED]
-    </div>
-  </div>
-
-  <!-- 漂浮資料夾波動帶 + 向下展開單日日程容器 -->
+  <!-- 漂浮資料夾波動帶 + 中央 Mario 64 月份週次大標題 + 向下展開單日日程容器 -->
   <div class="schedule-container" id="schedule-container" onclick="deselectCard(event)">
-    <!-- 7 日波動漂浮資料夾列（預設在 Y 軸中央，點選後平滑向上推升至頂部） -->
+
+    <!-- 未展開時位於上方中央的 Super Mario 64 大標題區（點開資料夾時會淡出並往左上移動） -->
+    <div class="hero-center-stage" id="hero-center-stage" onclick="event.stopPropagation()">
+      <div class="mario-month-row">
+        <button class="mario-arrow-btn" onclick="navigateMonth(-1)" title="上一月">
+          <svg width="20" height="22" viewBox="0 0 20 22"><polygon points="18,2 2,11 18,20"/></svg>
+        </button>
+        <div class="mario-month-text" id="hero-month-text">Nov.</div>
+        <button class="mario-arrow-btn" onclick="navigateMonth(1)" title="下一月">
+          <svg width="20" height="22" viewBox="0 0 20 22"><polygon points="2,2 18,11 2,20"/></svg>
+        </button>
+      </div>
+      <div class="mario-week-label">week</div>
+      <div class="mario-week-row">
+        <button class="mario-arrow-btn" onclick="navigateWeek(-1)" title="上一週">
+          <svg width="16" height="18" viewBox="0 0 20 22"><polygon points="18,2 2,11 18,20"/></svg>
+        </button>
+        <div class="mario-week-num" id="hero-week-num">3</div>
+        <button class="mario-arrow-btn" onclick="navigateWeek(1)" title="下一週">
+          <svg width="16" height="18" viewBox="0 0 20 22"><polygon points="2,2 18,11 2,20"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 7 日波動漂浮資料夾列（預設在 Y 軸偏中央，點選後平滑向上推升至頂部） -->
     <div class="folder-wave-stage" id="folder-wave-stage">
       <svg class="wave-connector-svg" viewBox="0 0 1000 70" preserveAspectRatio="none">
         <path class="wave-path-base" d="M 30 35 Q 110 8, 190 35 T 350 35 T 510 35 T 670 35 T 830 35 T 970 35" />
@@ -907,6 +1036,7 @@
       "19:00", "20:00", "21:00", "22:00", "23:00"
     ];
     const DAY_NAMES = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+    const MONTH_ABBR = ["Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.", "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."];
 
     // 預設 Client ID
     const DEFAULT_GOOGLE_CLIENT_ID = "865993916714-o0h883itsqd3lvgbatmkgqrqqhbrmuhf.apps.googleusercontent.com";
@@ -931,7 +1061,7 @@
 
     let currentAnchorDate = new Date();
     let displayedWeekDates = [];
-    let expandedDateKey = null; // 初始為 null：所有資料夾在畫面 Y 軸正中央懸浮待命
+    let expandedDateKey = null; // 初始為 null：所有資料夾在畫面中央懸浮待命，上方顯示大標題
 
     let draggedCardId = null;
     let isAltCloneMode = false;
@@ -988,16 +1118,13 @@
       const savedToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
       const savedExpiry = parseInt(localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRY) || "0", 10);
 
-      // 1. 檢查是否還有未過期的有效 Token（保留 2 分鐘緩衝時間）
       if (isAutoLoginEnabled && savedToken && Date.now() < savedExpiry - 120000) {
         googleAccessToken = savedToken;
         updateGoogleConnectedUI(true);
         scheduleTokenRefresh(savedExpiry - Date.now());
-        // 直接從雲端同步最新資料，完全不需重新登入
         syncFromGoogleDrive();
         setupTokenClient(savedClientId, false);
       } else {
-        // 2. 若 Token 已過期，但使用者曾經登入過，載入 SDK 後自動進行靜默無感續期
         setupTokenClient(savedClientId, isAutoLoginEnabled);
       }
     }
@@ -1034,7 +1161,6 @@
 
     function scheduleTokenRefresh(msUntilExpiry) {
       clearTimeout(tokenRefreshTimer);
-      // 在過期前 3 分鐘自動背景換發新 Token
       const refreshDelay = Math.max(msUntilExpiry - 180000, 10000);
       tokenRefreshTimer = setTimeout(() => {
         if (localStorage.getItem(STORAGE_KEYS.AUTO_LOGIN) === "true" && tokenClient) {
@@ -1052,7 +1178,6 @@
 
     function setupTokenClient(clientId, attemptSilentLogin = false) {
       if (!window.google || !google.accounts || !google.accounts.oauth2) {
-        // 若 SDK 尚未下載完成，延遲 250ms 再重試
         setTimeout(() => setupTokenClient(clientId, attemptSilentLogin), 250);
         return;
       }
@@ -1067,7 +1192,6 @@
               return;
             }
 
-            // 成功取得通行證，寫入 localStorage 實現永久記住登入
             googleAccessToken = resp.access_token;
             const expiresInSec = resp.expires_in ? parseInt(resp.expires_in, 10) : 3599;
             const expiryTimestamp = Date.now() + expiresInSec * 1000;
@@ -1082,7 +1206,6 @@
           }
         });
 
-        // 若之前已登入過且 Token 已過期，自動在背景靜默續期（無需彈窗）
         if (attemptSilentLogin && !googleAccessToken) {
           document.getElementById("sync-status").textContent = "[SYNC: AUTO-SIGNING IN...]";
           tokenClient.requestAccessToken({ prompt: "none" });
@@ -1354,13 +1477,16 @@
       }
 
       const midWeek = displayedWeekDates[3];
-      const year = midWeek.getFullYear();
-      const month = String(midWeek.getMonth() + 1).padStart(2, "0");
-      const weekOfMonth = String(getWeekOfMonth(midWeek)).padStart(2, "0");
-      
-      document.getElementById("period-display").innerHTML = `
-        <span>${year}</span><span class="slash">//</span><span>MONTH ${month}</span><span class="slash">//</span><span>WEEK ${weekOfMonth}</span>
-      `;
+      const monthAbbr = MONTH_ABBR[midWeek.getMonth()];
+      const weekOfMonth = getWeekOfMonth(midWeek);
+
+      // 更新中央大標題（未展開時顯示）
+      document.getElementById("hero-month-text").textContent = monthAbbr;
+      document.getElementById("hero-week-num").textContent = String(weekOfMonth);
+
+      // 同步更新左上角標題（展開時浮現）
+      document.getElementById("corner-month-text").textContent = monthAbbr;
+      document.getElementById("corner-week-text").textContent = `week ${weekOfMonth}`;
 
       if (targetSelectMode === "today") {
         const todayStr = formatDateKey(new Date());
@@ -1457,16 +1583,18 @@
       renderExpandedDrawer();
     }
 
-    /* 渲染向下展開的單日時間表抽屜與動畫狀態切換 */
+    /* 渲染向下展開的單日時間表抽屜與標題位置轉場動畫 */
     function renderExpandedDrawer() {
       const container = document.getElementById("schedule-container");
       const drawer = document.getElementById("day-drawer-wrapper");
       const timelineList = document.getElementById("day-timeline-list");
       const titleEl = document.getElementById("drawer-title");
+      const cornerPeriod = document.getElementById("corner-period-display");
 
       if (!expandedDateKey) {
         container.classList.remove("is-expanded");
         drawer.classList.remove("open");
+        if (cornerPeriod) cornerPeriod.classList.remove("visible");
         return;
       }
 
@@ -1475,6 +1603,8 @@
 
       container.classList.add("is-expanded");
       drawer.classList.add("open");
+      if (cornerPeriod) cornerPeriod.classList.add("visible");
+
       titleEl.innerHTML = `
         <span>📂 DIRECTORY // ${expandedDateKey} (${dayName})</span>
         <span style="font-size: 10px; color: #aaa;">[07:00 - 23:00 TIMELINE]</span>
