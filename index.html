@@ -283,7 +283,7 @@
        ======================================================== */
     .hero-center-stage {
       position: absolute;
-      top: 16px;
+      top: 76px;
       left: 50%;
       transform: translate(-50%, 0) scale(1);
       display: flex;
@@ -401,7 +401,7 @@
       position: relative;
       width: 100%;
       padding: 14px 0 10px 0;
-      margin-top: 115px;
+      margin-top: 85px;
       flex-shrink: 0;
       z-index: 15;
       overflow: hidden;
@@ -433,41 +433,6 @@
 
     .folder-chain-track.snapping {
       transition: transform 0.44s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    /* 貫穿三週的連續能量波動曲線 (SVG) */
-    .wave-connector-svg {
-      position: absolute;
-      top: 52%;
-      left: 0;
-      width: 100%;
-      height: 70px;
-      transform: translateY(-50%);
-      pointer-events: none;
-      z-index: 1;
-      overflow: visible;
-    }
-
-    .wave-path-glow {
-      fill: none;
-      stroke: var(--accent-color);
-      stroke-width: 2.5;
-      stroke-dasharray: 8 6;
-      opacity: 0.75;
-      animation: waveFlow 14s linear infinite;
-    }
-
-    .wave-path-base {
-      fill: none;
-      stroke: var(--header-bg);
-      stroke-width: 2;
-      opacity: 0.5;
-    }
-
-    @keyframes waveFlow {
-      to {
-        stroke-dashoffset: -280;
-      }
     }
 
     /* 21 個資料夾橫向鍊條排列 */
@@ -1017,10 +982,6 @@
     <!-- 21 日連續鍊條波動漂浮資料夾列（按住左右拖動可無縫滑動切換上下週次） -->
     <div class="folder-wave-stage" id="folder-wave-stage">
       <div class="folder-chain-track" id="folder-chain-track">
-        <svg class="wave-connector-svg" viewBox="0 0 3000 70" preserveAspectRatio="none">
-          <path class="wave-path-base" d="M 0 35 Q 80 8, 160 35 T 320 35 T 480 35 T 640 35 T 800 35 T 960 35 T 1120 35 T 1280 35 T 1440 35 T 1600 35 T 1760 35 T 1920 35 T 2080 35 T 2240 35 T 2400 35 T 2560 35 T 2720 35 T 2880 35 T 3000 35" />
-          <path class="wave-path-glow" d="M 0 35 Q 80 8, 160 35 T 320 35 T 480 35 T 640 35 T 800 35 T 960 35 T 1120 35 T 1280 35 T 1440 35 T 1600 35 T 1760 35 T 1920 35 T 2080 35 T 2240 35 T 2400 35 T 2560 35 T 2720 35 T 2880 35 T 3000 35" />
-        </svg>
         <div class="folder-wave-row" id="folder-wave-row"></div>
       </div>
     </div>
