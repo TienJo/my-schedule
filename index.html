@@ -160,8 +160,8 @@
       flex-direction: column;
       gap: 10px;
       z-index: 100;
-      min-width: 280px;
-      max-width: 340px;
+      min-width: 290px;
+      max-width: 350px;
     }
 
     .settings-modal.active {
@@ -200,6 +200,9 @@
       font-size: 10px;
       color: var(--accent-color);
       font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .google-sync-section input[type="text"] {
@@ -240,6 +243,11 @@
       color: #777777;
       letter-spacing: 1px;
       font-weight: 700;
+      transition: color 0.2s;
+    }
+
+    .lock-status.linked {
+      color: var(--accent-color);
     }
 
     /* 矩陣排程主要容器 */
@@ -475,6 +483,30 @@
       letter-spacing: 0.5px;
       font-weight: 700;
     }
+
+    /* 系統狀態通知條 (取代原生 alert) */
+    .system-toast {
+      position: fixed;
+      bottom: 202px;
+      right: 14px;
+      background-color: var(--header-bg);
+      color: var(--accent-color);
+      border: 2px solid var(--accent-color);
+      box-shadow: 4px 4px 0px var(--header-bg);
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .system-toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 </head>
 <body>
@@ -515,11 +547,15 @@
 
       <!-- Google 雲端硬碟自動同步面板 -->
       <div class="google-sync-section">
-        <label>GOOGLE DRIVE SYNC (APP DATA)</label>
+        <label>
+          <span>GOOGLE DRIVE SYNC</span>
+          <span id="auto-login-badge" style="color: #888; font-size: 9px;">AUTO-LOGIN: OFF</span>
+        </label>
         <input type="text" id="google-client-id" placeholder="OAuth Client ID..." onchange="handleSaveClientId(this.value)" />
         <div style="display: flex; gap: 4px; margin-top: 4px;">
-          <button id="btn-gdrive-auth" class="accent" style="flex: 1;" onclick="handleAuthGoogleDrive()">登入 GOOGLE</button>
-          <button id="btn-gdrive-sync" class="secondary" style="flex: 1;" disabled onclick="syncFromGoogleDrive()">雲端載入</button>
+          <button id="btn-gdrive-auth" class="accent" style="flex: 2;" onclick="handleAuthGoogleDrive()">登入 GOOGLE</button>
+          <button id="btn-gdrive-sync" class="secondary" style="flex: 1;" disabled onclick="syncFromGoogleDrive()">同步</button>
+          <button id="btn-gdrive-logout" class="danger" style="flex: 1; display: none;" onclick="handleLogoutGoogleDrive()">登出</button>
         </div>
       </div>
     </div>
@@ -551,6 +587,9 @@
       <tbody id="schedule-body"></tbody>
     </table>
   </div>
+
+  <!-- 無干擾系統通知氣泡 -->
+  <div class="system-toast" id="system-toast"></div>
 
   <!-- 下方卡帶操作台 -->
   <div class="dock-area">
@@ -590,6 +629,14 @@
     // 預設 Client ID
     const DEFAULT_GOOGLE_CLIENT_ID = "865993916714-o0h883itsqd3lvgbatmkgqrqqhbrmuhf.apps.googleusercontent.com";
 
+    // 儲存登入狀態的 Key
+    const STORAGE_KEYS = {
+      CLIENT_ID: "gdrive_sync_client_id",
+      ACCESS_TOKEN: "gdrive_access_token",
+      TOKEN_EXPIRY: "gdrive_token_expiry",
+      AUTO_LOGIN: "gdrive_auto_login_enabled"
+    };
+
     let state = {
       theme: {
         "--bg-color": "#002be8",
@@ -613,6 +660,19 @@
     let googleAccessToken = null;
     let gdriveFileId = null;
     let cloudDebounceTimer = null;
+    let tokenRefreshTimer = null;
+    let toastTimer = null;
+
+    function showToast(msg) {
+      const toast = document.getElementById("system-toast");
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 3000);
+    }
 
     function init() {
       loadFromStorage();
@@ -633,26 +693,83 @@
     }
 
     /* ========================================================
-       GOOGLE 雲端儲存 (DRIVE APPDATA) 授權與同步引擎
+       GOOGLE 雲端儲存 (DRIVE APPDATA) 持久化自動登入與同步引擎
        ======================================================== */
     function initGoogleAuthSettings() {
-      const savedClientId = localStorage.getItem("gdrive_sync_client_id") || DEFAULT_GOOGLE_CLIENT_ID;
+      const savedClientId = localStorage.getItem(STORAGE_KEYS.CLIENT_ID) || DEFAULT_GOOGLE_CLIENT_ID;
       const input = document.getElementById("google-client-id");
       if (input) input.value = savedClientId;
-      setupTokenClient(savedClientId);
+
+      const isAutoLoginEnabled = localStorage.getItem(STORAGE_KEYS.AUTO_LOGIN) === "true";
+      const savedToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      const savedExpiry = parseInt(localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRY) || "0", 10);
+
+      // 1. 檢查是否還有未過期的有效 Token（保留 2 分鐘緩衝時間）
+      if (isAutoLoginEnabled && savedToken && Date.now() < savedExpiry - 120000) {
+        googleAccessToken = savedToken;
+        updateGoogleConnectedUI(true);
+        scheduleTokenRefresh(savedExpiry - Date.now());
+        // 直接從雲端同步最新資料，完全不需重新登入
+        syncFromGoogleDrive();
+        setupTokenClient(savedClientId, false);
+      } else {
+        // 2. 若 Token 已過期，但使用者曾經登入過，載入 SDK 後自動進行靜默無感續期
+        setupTokenClient(savedClientId, isAutoLoginEnabled);
+      }
+    }
+
+    function updateGoogleConnectedUI(connected) {
+      const authBtn = document.getElementById("btn-gdrive-auth");
+      const syncBtn = document.getElementById("btn-gdrive-sync");
+      const logoutBtn = document.getElementById("btn-gdrive-logout");
+      const statusEl = document.getElementById("sync-status");
+      const badgeEl = document.getElementById("auto-login-badge");
+
+      if (connected) {
+        authBtn.textContent = "已連結 GOOGLE";
+        syncBtn.disabled = false;
+        logoutBtn.style.display = "inline-block";
+        statusEl.textContent = "[SYNC: GOOGLE DRIVE LINKED]";
+        statusEl.classList.add("linked");
+        if (badgeEl) {
+          badgeEl.textContent = "AUTO-LOGIN: ON";
+          badgeEl.style.color = "var(--accent-color)";
+        }
+      } else {
+        authBtn.textContent = "登入 GOOGLE";
+        syncBtn.disabled = true;
+        logoutBtn.style.display = "none";
+        statusEl.textContent = "[SYNC: LOCAL DATA PERSISTED]";
+        statusEl.classList.remove("linked");
+        if (badgeEl) {
+          badgeEl.textContent = "AUTO-LOGIN: OFF";
+          badgeEl.style.color = "#888";
+        }
+      }
+    }
+
+    function scheduleTokenRefresh(msUntilExpiry) {
+      clearTimeout(tokenRefreshTimer);
+      // 在過期前 3 分鐘自動背景換發新 Token
+      const refreshDelay = Math.max(msUntilExpiry - 180000, 10000);
+      tokenRefreshTimer = setTimeout(() => {
+        if (localStorage.getItem(STORAGE_KEYS.AUTO_LOGIN) === "true" && tokenClient) {
+          tokenClient.requestAccessToken({ prompt: "none" });
+        }
+      }, refreshDelay);
     }
 
     function handleSaveClientId(val) {
       const clientId = val.trim() || DEFAULT_GOOGLE_CLIENT_ID;
-      localStorage.setItem("gdrive_sync_client_id", clientId);
-      setupTokenClient(clientId);
-      alert("GOOGLE CLIENT ID 已儲存！請點選「登入 GOOGLE」完成授權。");
+      localStorage.setItem(STORAGE_KEYS.CLIENT_ID, clientId);
+      setupTokenClient(clientId, false);
+      showToast("GOOGLE CLIENT ID 已儲存！");
     }
 
-    function setupTokenClient(clientId) {
+    function setupTokenClient(clientId, attemptSilentLogin = false) {
       if (!window.google || !google.accounts || !google.accounts.oauth2) {
-        // 若 SDK 尚未下載完成，延遲 300ms 再重試
-        setTimeout(() => setupTokenClient(clientId), 300);
+        // 若 SDK 尚未下載完成，延遲 250ms 再重試
+        setTimeout(() => setupTokenClient(clientId, attemptSilentLogin), 250);
         return;
       }
       try {
@@ -661,17 +778,37 @@
           scope: GDRIVE_SCOPE,
           callback: async (resp) => {
             if (resp.error) {
+              // 若靜默續期失敗（例如使用者撤銷授權或瀏覽器阻擋第三方 Cookie），優雅降級為未登入狀態
+              if (resp.error === "interaction_required" || resp.error === "login_required") {
+                console.info("Silent login requires user interaction.");
+                updateGoogleConnectedUI(false);
+                return;
+              }
               console.error("GOOGLE AUTH FAILED", resp);
-              alert("授權失敗：" + resp.error);
+              showToast("授權失敗：" + resp.error);
               return;
             }
+
+            // 成功取得通行證，寫入 localStorage 實現永久記住登入
             googleAccessToken = resp.access_token;
-            document.getElementById("btn-gdrive-auth").textContent = "已連結 GOOGLE";
-            document.getElementById("btn-gdrive-sync").disabled = false;
-            document.getElementById("sync-status").textContent = "[SYNC: GOOGLE DRIVE LINKED]";
+            const expiresInSec = resp.expires_in ? parseInt(resp.expires_in, 10) : 3599;
+            const expiryTimestamp = Date.now() + expiresInSec * 1000;
+
+            localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, googleAccessToken);
+            localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRY, String(expiryTimestamp));
+            localStorage.setItem(STORAGE_KEYS.AUTO_LOGIN, "true");
+
+            updateGoogleConnectedUI(true);
+            scheduleTokenRefresh(expiresInSec * 1000);
             await syncFromGoogleDrive();
           }
         });
+
+        // 若之前已登入過且 Token 已過期，自動在背景靜默續期（無需彈窗）
+        if (attemptSilentLogin && !googleAccessToken) {
+          document.getElementById("sync-status").textContent = "[SYNC: AUTO-SIGNING IN...]";
+          tokenClient.requestAccessToken({ prompt: "none" });
+        }
       } catch (e) {
         console.error("TokenClient init error:", e);
       }
@@ -679,12 +816,27 @@
 
     function handleAuthGoogleDrive() {
       const clientId = (document.getElementById("google-client-id").value || DEFAULT_GOOGLE_CLIENT_ID).trim();
-      if (!tokenClient) setupTokenClient(clientId);
+      if (!tokenClient) setupTokenClient(clientId, false);
       if (tokenClient) {
+        // 使用者主動點擊登入時，允許跳出選擇帳號視窗（若已授權過則直接完成）
         tokenClient.requestAccessToken({ prompt: "" });
       } else {
-        alert("Google 認證庫尚未載入完成，請確認網路連線正常或稍候幾秒再試！");
+        showToast("Google 認證庫載入中，請稍候兩秒再點一次！");
       }
+    }
+
+    function handleLogoutGoogleDrive() {
+      if (googleAccessToken && window.google && google.accounts && google.accounts.oauth2) {
+        google.accounts.oauth2.revoke(googleAccessToken, () => {});
+      }
+      googleAccessToken = null;
+      gdriveFileId = null;
+      clearTimeout(tokenRefreshTimer);
+      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
+      localStorage.setItem(STORAGE_KEYS.AUTO_LOGIN, "false");
+      updateGoogleConnectedUI(false);
+      showToast("已登出 GOOGLE 雲端同步");
     }
 
     async function syncFromGoogleDrive() {
@@ -696,6 +848,15 @@
         const listRes = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${query}&fields=files(id,name)`, {
           headers: { Authorization: `Bearer ${googleAccessToken}` }
         });
+
+        // 若 Token 意外失效（401），自動觸發一次靜默重新授權
+        if (listRes.status === 401) {
+          googleAccessToken = null;
+          localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+          if (tokenClient) tokenClient.requestAccessToken({ prompt: "none" });
+          return;
+        }
+
         const listData = await listRes.json();
 
         if (listData.files && listData.files.length > 0) {
@@ -753,10 +914,16 @@
             },
             body: multipartRequestBody
           });
+
+          if (res.status === 401 && tokenClient) {
+            tokenClient.requestAccessToken({ prompt: "none" });
+            return;
+          }
+
           const data = await res.json();
           if (data.id) gdriveFileId = data.id;
         } else {
-          await fetch(`https://www.googleapis.com/upload/drive/v3/files/${gdriveFileId}?uploadType=media`, {
+          const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${gdriveFileId}?uploadType=media`, {
             method: "PATCH",
             headers: {
               Authorization: `Bearer ${googleAccessToken}`,
@@ -764,6 +931,11 @@
             },
             body: fileContent
           });
+
+          if (res.status === 401 && tokenClient) {
+            tokenClient.requestAccessToken({ prompt: "none" });
+            return;
+          }
         }
         document.getElementById("sync-status").textContent = "[SYNC: GOOGLE DRIVE SAVED]";
       } catch (err) {
@@ -1180,9 +1352,10 @@
             applyTheme();
             updateWeekTimeline();
             updateWorkbenchUI();
+            showToast("檔案匯入成功！");
           }
         } catch (err) {
-          alert("SYS_ERR: INVALID ARCHIVE DATA");
+          showToast("SYS_ERR: 檔案格式錯誤");
         }
       };
       reader.readAsText(file);
