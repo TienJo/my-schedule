@@ -389,8 +389,12 @@
 
     .mario-arrow-btn svg {
       fill: #ffffff;
+      stroke: #ffffff;
+      stroke-width: 3.2;
+      stroke-linejoin: round;
+      stroke-linecap: round;
       filter: drop-shadow(2px 3px 0px rgba(0, 0, 0, 0.7));
-      transition: fill 0.15s;
+      transition: fill 0.15s, stroke 0.15s;
     }
 
     .mario-arrow-btn:hover {
@@ -400,6 +404,7 @@
 
     .mario-arrow-btn:hover svg {
       fill: var(--accent-color);
+      stroke: var(--accent-color);
     }
 
     .mario-arrow-btn:active {
@@ -726,6 +731,109 @@
       margin: 0;
     }
 
+    /* ========================================================
+       整週日程檢視模式 (FULL WEEK MATRIX VIEW)
+       ======================================================== */
+    .week-matrix-wrapper {
+      display: none;
+      flex: 1 1 auto;
+      overflow: auto;
+      background-color: var(--header-bg);
+      border: 2px solid #ffffff;
+      box-shadow: 4px 4px 0px var(--header-bg);
+      z-index: 18;
+    }
+
+    .schedule-container.is-week-mode {
+      justify-content: flex-start;
+      padding-top: 8px;
+    }
+
+    .schedule-container.is-week-mode .hero-center-stage,
+    .schedule-container.is-week-mode .folder-wave-stage,
+    .schedule-container.is-week-mode .day-drawer-wrapper {
+      display: none !important;
+    }
+
+    .schedule-container.is-week-mode .week-matrix-wrapper {
+      display: block;
+    }
+
+    .week-grid-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: fixed;
+      background: var(--header-bg);
+    }
+
+    .week-grid-table th,
+    .week-grid-table td {
+      border-right: 1px solid rgba(255, 255, 255, 0.25);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+      text-align: center;
+    }
+
+    .week-grid-table th {
+      font-family: var(--font-ui);
+      background-color: var(--header-bg);
+      color: #ffffff;
+      padding: 7px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      position: sticky;
+      top: 0;
+      z-index: 15;
+      border-bottom: 2px solid #ffffff;
+      cursor: pointer;
+      transition: background-color 0.15s, color 0.15s;
+    }
+
+    .week-grid-table th:not(.week-time-col):hover {
+      background-color: rgba(255, 255, 255, 0.12);
+      color: var(--accent-color);
+    }
+
+    .week-grid-table th.today-header {
+      color: var(--accent-color);
+      border-bottom: 2px solid var(--accent-color);
+    }
+
+    .week-time-col {
+      font-family: var(--font-ui);
+      width: 72px;
+      min-width: 72px;
+      max-width: 72px;
+      font-size: 11px;
+      font-weight: 700;
+      background-color: var(--header-bg);
+      color: var(--accent-color);
+      letter-spacing: 0.5px;
+      position: sticky;
+      left: 0;
+      z-index: 14;
+      border-right: 2px solid #ffffff !important;
+      cursor: default !important;
+    }
+
+    th.week-time-col {
+      z-index: 20 !important;
+    }
+
+    .week-slot-cell {
+      background-color: var(--bg-color);
+      height: 44px;
+      vertical-align: middle;
+      padding: 2px;
+      transition: background-color 0.1s;
+    }
+
+    .week-slot-cell.drag-over {
+      background-color: var(--accent-color) !important;
+      outline: 2px dashed var(--header-bg);
+    }
+
     /* 下方卡帶操作台 */
     .dock-area {
       background-color: var(--header-bg);
@@ -920,6 +1028,7 @@
     </div>
 
     <div class="header-right-group">
+      <button class="secondary" id="btn-toggle-week-view" onclick="toggleWeekViewMode()">📅 整週日程</button>
       <button class="accent" onclick="jumpToCurrentDate()">TODAY</button>
       <div class="lock-status" id="sync-status">[SYNC: LOCAL DATA PERSISTED]</div>
       <button class="icon-btn" onclick="toggleSettingsModal(event)" title="COLOR & SYNC CONFIG">⚙</button>
@@ -972,21 +1081,21 @@
     <div class="hero-center-stage" id="hero-center-stage" onclick="event.stopPropagation()">
       <div class="mario-month-row">
         <button class="mario-arrow-btn" onclick="navigateMonth(-1)" title="上一月">
-          <svg width="18" height="20" viewBox="0 0 20 22"><polygon points="18,2 2,11 18,20"/></svg>
+          <svg width="19" height="21" viewBox="0 0 24 24"><path d="M17 4.5 L6.5 12 L17 19.5 Z"/></svg>
         </button>
         <div class="mario-month-text" id="hero-month-text">Nov<span class="mario-month-dot">.</span></div>
         <button class="mario-arrow-btn" onclick="navigateMonth(1)" title="下一月">
-          <svg width="18" height="20" viewBox="0 0 20 22"><polygon points="2,2 18,11 2,20"/></svg>
+          <svg width="19" height="21" viewBox="0 0 24 24"><path d="M7 4.5 L17.5 12 L7 19.5 Z"/></svg>
         </button>
       </div>
       <div class="mario-week-label">week</div>
       <div class="mario-week-row">
         <button class="mario-arrow-btn" onclick="navigateWeek(-1)" title="上一週">
-          <svg width="16" height="18" viewBox="0 0 20 22"><polygon points="18,2 2,11 18,20"/></svg>
+          <svg width="17" height="19" viewBox="0 0 24 24"><path d="M17 4.5 L6.5 12 L17 19.5 Z"/></svg>
         </button>
         <div class="mario-week-num" id="hero-week-num">3</div>
         <button class="mario-arrow-btn" onclick="navigateWeek(1)" title="下一週">
-          <svg width="16" height="18" viewBox="0 0 20 22"><polygon points="2,2 18,11 2,20"/></svg>
+          <svg width="17" height="19" viewBox="0 0 24 24"><path d="M7 4.5 L17.5 12 L7 19.5 Z"/></svg>
         </button>
       </div>
     </div>
@@ -1009,6 +1118,18 @@
       <div class="drawer-scroll-area" id="drawer-scroll-area">
         <div class="day-timeline-list" id="day-timeline-list"></div>
       </div>
+    </div>
+
+    <!-- 整週日程檢視模式（MON - SUN 完整七日矩陣，支援直接拖曳排程與點擊單日切回） -->
+    <div class="week-matrix-wrapper" id="week-matrix-wrapper">
+      <table class="week-grid-table">
+        <thead>
+          <tr id="week-grid-header-row">
+            <th class="week-time-col">T-BLOCK</th>
+          </tr>
+        </thead>
+        <tbody id="week-grid-body"></tbody>
+      </table>
     </div>
   </div>
 
@@ -1075,6 +1196,7 @@
     let currentAnchorDate = new Date();
     let displayedWeekDates = [];
     let expandedDateKey = null; // 初始為 null：所有資料夾在畫面中央懸浮待命，上方顯示大標題
+    let isWeekViewMode = false; // 是否處於「整週日程」檢視模式
 
     let draggedCardId = null;
     let isAltCloneMode = false;
@@ -1402,6 +1524,7 @@
             applyTheme();
             renderFolderWave();
             renderExpandedDrawer();
+            renderWeekMatrix();
             renderAllCards();
             document.getElementById("sync-status").textContent = "[SYNC: CLOUD SYNCED]";
             return;
@@ -1570,7 +1693,7 @@
     }
 
     function navigateWeek(direction, fromChainDrag = false) {
-      if (!fromChainDrag && !chainIsAnimating) {
+      if (!isWeekViewMode && !fromChainDrag && !chainIsAnimating) {
         const stage = document.getElementById("folder-wave-stage");
         const track = document.getElementById("folder-chain-track");
         if (stage && track) {
@@ -1613,7 +1736,20 @@
 
     function jumpToCurrentDate() {
       currentAnchorDate = new Date();
-      updateWeekTimeline("today");
+      updateWeekTimeline(isWeekViewMode ? null : "today");
+    }
+
+    function toggleWeekViewMode() {
+      isWeekViewMode = !isWeekViewMode;
+      const btn = document.getElementById("btn-toggle-week-view");
+      if (btn) {
+        btn.textContent = isWeekViewMode ? "📂 資料夾模式" : "📅 整週日程";
+        btn.classList.toggle("accent", isWeekViewMode);
+        btn.classList.toggle("secondary", !isWeekViewMode);
+      }
+      renderExpandedDrawer();
+      renderWeekMatrix();
+      renderAllCards();
     }
 
     function updateWeekTimeline(targetSelectMode = null) {
@@ -1651,6 +1787,7 @@
 
       renderFolderWave();
       renderExpandedDrawer();
+      renderWeekMatrix();
       renderAllCards();
     }
 
@@ -1749,6 +1886,16 @@
       const titleEl = document.getElementById("drawer-title");
       const cornerPeriod = document.getElementById("corner-period-display");
 
+      if (isWeekViewMode) {
+        container.classList.add("is-week-mode");
+        container.classList.remove("is-expanded");
+        drawer.classList.remove("open");
+        if (cornerPeriod) cornerPeriod.classList.add("visible");
+        return;
+      } else {
+        container.classList.remove("is-week-mode");
+      }
+
       if (!expandedDateKey) {
         container.classList.remove("is-expanded");
         drawer.classList.remove("open");
@@ -1790,6 +1937,64 @@
         row.appendChild(timeLabel);
         row.appendChild(dropzone);
         timelineList.appendChild(row);
+      });
+    }
+
+    /* 渲染整週七日完整矩陣時間表 */
+    function renderWeekMatrix() {
+      const headerRow = document.getElementById("week-grid-header-row");
+      const tbody = document.getElementById("week-grid-body");
+      if (!headerRow || !tbody) return;
+
+      headerRow.innerHTML = '<th class="week-time-col">T-BLOCK</th>';
+      const todayStr = formatDateKey(new Date());
+
+      displayedWeekDates.forEach((d, idx) => {
+        const th = document.createElement("th");
+        const dateKey = formatDateKey(d);
+        const mmdd = `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+        if (dateKey === todayStr) th.classList.add("today-header");
+        th.textContent = `${DAY_NAMES[idx]} // ${mmdd}`;
+        th.title = "點擊切換至此日資料夾視圖";
+        th.onclick = () => {
+          isWeekViewMode = false;
+          const btn = document.getElementById("btn-toggle-week-view");
+          if (btn) {
+            btn.textContent = "📅 整週日程";
+            btn.classList.remove("accent");
+            btn.classList.add("secondary");
+          }
+          expandedDateKey = dateKey;
+          renderFolderWave();
+          renderExpandedDrawer();
+          renderAllCards();
+        };
+        headerRow.appendChild(th);
+      });
+
+      tbody.innerHTML = "";
+      TIME_SLOTS.forEach((time, sIdx) => {
+        const row = document.createElement("tr");
+
+        const timeTd = document.createElement("td");
+        timeTd.className = "week-time-col";
+        timeTd.textContent = time;
+        row.appendChild(timeTd);
+
+        displayedWeekDates.forEach((d) => {
+          const td = document.createElement("td");
+          td.className = "week-slot-cell";
+          const dateKey = formatDateKey(d);
+          const slotId = `${dateKey}_${sIdx}`;
+          td.dataset.slotId = slotId;
+
+          td.ondragover = (e) => allowDrop(e);
+          td.ondragleave = (e) => e.currentTarget.classList.remove("drag-over");
+          td.ondrop = (e) => handleDrop(e, slotId);
+          row.appendChild(td);
+        });
+
+        tbody.appendChild(row);
       });
     }
 
@@ -1859,18 +2064,17 @@
     }
 
     function renderAllCards() {
-      document.querySelectorAll(".timeline-slot-dropzone").forEach(cell => cell.innerHTML = "");
+      document.querySelectorAll(".timeline-slot-dropzone, .week-slot-cell").forEach(cell => cell.innerHTML = "");
       document.getElementById("dock-container").innerHTML = "";
 
       Object.values(state.cards).forEach(card => {
-        const el = createCardElement(card);
         if (card.slot === "dock" || !card.slot) {
-          document.getElementById("dock-container").appendChild(el);
+          document.getElementById("dock-container").appendChild(createCardElement(card));
         } else {
-          const targetSlot = document.querySelector(`[data-slot-id="${card.slot}"]`);
-          if (targetSlot) {
-            targetSlot.appendChild(el);
-          }
+          const targetSlots = document.querySelectorAll(`[data-slot-id="${card.slot}"]`);
+          targetSlots.forEach(targetSlot => {
+            targetSlot.appendChild(createCardElement(card));
+          });
         }
       });
 
@@ -1945,6 +2149,7 @@
           e.target.classList.contains("folder-wave-row") ||
           e.target.classList.contains("drawer-scroll-area") ||
           e.target.classList.contains("timeline-slot-dropzone") ||
+          e.target.classList.contains("week-slot-cell") ||
           e.target.classList.contains("dock-slots")) {
         selectedCardId = null;
         updateWorkbenchUI();
