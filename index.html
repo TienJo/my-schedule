@@ -283,7 +283,7 @@
     .schedule-container {
       flex: 1;
       overflow: hidden;
-      padding: 10px 14px 12px 14px;
+      padding: 10px 14px 135px 14px;
       position: relative;
       display: flex;
       flex-direction: column;
@@ -834,52 +834,495 @@
       outline: 2px dashed var(--header-bg);
     }
 
-    /* 下方卡帶操作台 */
-    .dock-area {
-      background-color: var(--header-bg);
-      border-top: 3px solid #ffffff;
-      padding: 8px 14px;
-      height: 190px;
+    /* ========================================================
+       《Slay the Spire》純懸浮扇形手牌區（穩定碰撞箱分離架構）
+       ======================================================== */
+    .spire-hand-stage {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 150px;
+      pointer-events: none;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      z-index: 35;
+      padding-bottom: 0px;
+    }
+
+    .spire-hand-fan {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      pointer-events: auto;
+      padding: 0 24px;
+      position: relative;
+    }
+
+    /* 外層固定感應槽：始終貼齊螢幕底部，高度與垂直位置不隨動畫改變，徹底杜絕滑鼠抖動 */
+    .spire-card-slot {
+      width: 136px;
+      height: 136px;
+      position: relative;
+      margin-left: var(--overlap, -22px);
+      cursor: grab;
+      user-select: none;
+      flex-shrink: 0;
+      transition: margin 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .spire-card-slot:first-child {
+      margin-left: 0;
+    }
+
+    .spire-card-slot:hover {
+      margin-left: 10px;
+      margin-right: 18px;
+      z-index: 80 !important;
+    }
+
+    .spire-card-slot:first-child:hover {
+      margin-left: 0;
+    }
+
+    .spire-card-slot:active {
+      cursor: grabbing;
+    }
+
+    /* 內層純實色視覺卡牌：BIGD MONSTER FRIENDS 圖鑑滿版純色風格，平時呈扇形弧度堆疊且約 1/3 藏在畫面底部外 */
+    .spire-card-visual {
+      position: absolute;
+      bottom: -62px;
+      left: 0;
+      width: 136px;
+      height: 192px;
+      background-color: var(--card-tint, #ffffff);
+      border: 2px solid #000000;
+      border-radius: 12px;
+      box-shadow: -3px 5px 0px #000000, 0 8px 18px rgba(0, 0, 0, 0.65);
+      color: #000000;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      z-index: 30;
-      box-shadow: 0px -4px 12px rgba(0,0,0,0.6);
+      justify-content: space-between;
+      padding: 10px 10px 8px 10px;
+      pointer-events: none;
+      opacity: 1;
+      overflow: hidden;
+      transform-origin: bottom center;
+      transform: translateY(var(--arc-y, 0px)) rotate(var(--fan-rot, 0deg));
+      transition:
+        transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.24s ease,
+        border-color 0.2s ease;
     }
 
-    .workbench-toolbar {
+    /* 懸停時回正為 0 度並筆直向正上方完整彈出與放大，不斜斜的、不透明 */
+    .spire-card-slot:hover .spire-card-visual,
+    .spire-card-slot.radial-open .spire-card-visual {
+      transform: translateY(-78px) rotate(0deg) scale(1.12) !important;
+      border-color: #000000;
+      box-shadow: 0 0 0 2.5px var(--accent-color), 0 14px 26px rgba(0, 0, 0, 0.85);
+    }
+
+    .spire-card-slot.selected .spire-card-visual {
+      box-shadow: 0 0 0 2.5px var(--accent-color), -3px 5px 0px #000000;
+    }
+
+    /* 長按後在卡片上方彈出的三個圓圈操作圖示 */
+    .card-radial-menu {
+      position: absolute;
+      top: -124px;
+      left: 50%;
+      transform: translateX(-50%) scale(0.6);
       display: flex;
       align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      background-color: rgba(255, 255, 255, 0.05);
-      padding: 6px 12px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      gap: 8px;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 120;
+      transition:
+        opacity 0.18s ease,
+        transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
-    .workbench-section {
+    .spire-card-slot.radial-open .card-radial-menu {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) scale(1);
+    }
+
+    .radial-circle-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background-color: #ffffff;
+      border: 2.5px solid #000000;
+      box-shadow: 2px 3px 0px #000000;
+      color: #000000;
+      font-size: 14px;
+      font-weight: 900;
       display: flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      padding: 0;
+      cursor: pointer;
+      transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.15s;
     }
 
-    .workbench-divider {
-      width: 2px;
-      height: 20px;
-      background-color: rgba(255, 255, 255, 0.2);
+    .radial-circle-btn:nth-child(2) {
+      transform: translateY(-6px);
     }
 
-    .dock-slots {
+    .radial-circle-btn:hover,
+    .radial-circle-btn.active-hover {
+      background-color: var(--accent-color);
+      transform: scale(1.18) !important;
+      box-shadow: 2px 3px 0px #000000;
+    }
+
+    .radial-circle-btn:nth-child(2):hover,
+    .radial-circle-btn:nth-child(2).active-hover {
+      transform: translateY(-6px) scale(1.18) !important;
+    }
+
+    .radial-circle-btn.del:hover,
+    .radial-circle-btn.del.active-hover {
+      background-color: #ff3344;
+      color: #ffffff;
+    }
+
+    /* BIGD MONSTER FRIENDS 風格：左上角粗黑標題區 */
+    .monster-header-block {
+      position: relative;
+      z-index: 1;
+      text-align: left;
+      pointer-events: none;
+    }
+
+    .monster-task-title {
+      font-family: var(--font-card);
+      font-size: 13.5px;
+      font-weight: 900;
+      line-height: 1.12;
+      color: #000000;
+      letter-spacing: -0.2px;
+      word-break: break-word;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .monster-sub-series {
+      font-family: "Arial Black", Impact, sans-serif;
+      font-size: 8px;
+      font-weight: 900;
+      line-height: 1.05;
+      color: #000000;
+      letter-spacing: 0.3px;
+      margin-top: 2px;
+      opacity: 0.88;
+    }
+
+    /* 中央像素怪獸展示區（刻意微微向上疊蓋標題文字，還原圖片層次感） */
+    .monster-pixel-stage {
+      position: relative;
+      z-index: 2;
       flex: 1;
       display: flex;
-      gap: 8px;
-      overflow-x: auto;
       align-items: center;
-      padding: 6px;
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      justify-content: center;
+      margin-top: -10px;
+      margin-bottom: -4px;
     }
 
+    .monster-pixel-svg {
+      width: 92px;
+      height: 92px;
+      image-rendering: pixelated;
+      shape-rendering: crispEdges;
+      filter: drop-shadow(0px 3px 0px rgba(0, 0, 0, 0.14));
+    }
+
+    /* 底部左側日系怪獸字標 + 右側眼睛徽章與角色英文名稱 */
+    .monster-footer-row {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 4px;
+      padding-top: 2px;
+    }
+
+    .monster-logo-stamp {
+      font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+      font-size: 9px;
+      font-weight: 900;
+      font-style: italic;
+      color: #000000;
+      line-height: 1;
+      letter-spacing: -0.3px;
+      flex-shrink: 0;
+      background-color: rgba(255, 255, 255, 0.45);
+      border: 1.2px solid #000000;
+      border-radius: 4px;
+      padding: 1px 4px;
+    }
+
+    .monster-points-tag {
+      font-family: var(--font-ui);
+      font-size: 9.5px;
+      font-weight: 900;
+      line-height: 1;
+      color: #000000;
+      letter-spacing: 0.3px;
+      flex-shrink: 0;
+    }
+
+    /* 卡牌上的 + 號新增卡位 */
+    .spire-add-slot {
+      cursor: pointer;
+    }
+
+    .spire-add-visual {
+      background-color: #ffffff;
+      border: 2px solid #000000;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .spire-add-slot:hover .spire-add-visual {
+      border-color: #000000;
+      background-color: #f7f4eb;
+    }
+
+    .spire-add-plus {
+      color: #000000;
+      font-size: 38px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      transition: transform 0.2s;
+    }
+
+    .spire-add-slot:hover .spire-add-plus {
+      transform: scale(1.18);
+    }
+
+    .spire-add-label {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      color: #000000;
+    }
+
+    /* 點擊 + 卡牌或編輯卡牌時浮出的迷你輸入卡框 */
+    .spire-forge-popover {
+      position: fixed;
+      bottom: 220px;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background-color: #ffffff;
+      border: 2.5px solid #000000;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      padding: 6px 10px;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      z-index: 120;
+      transition: background-color 0.2s ease;
+    }
+
+    .spire-forge-popover.active {
+      display: flex;
+      animation: popInCard 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes popInCard {
+      from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(0.95); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+    }
+
+    .forge-minimal-select-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      padding-right: 6px;
+      border-right: 1.5px solid rgba(0, 0, 0, 0.18);
+    }
+
+    .forge-custom-trigger {
+      background: transparent;
+      border: none;
+      color: #000000;
+      font-family: var(--font-card);
+      font-size: 13px;
+      font-weight: 800;
+      padding: 4px 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .forge-custom-trigger:hover {
+      transform: none !important;
+      box-shadow: none !important;
+      opacity: 0.75;
+    }
+
+    .forge-trigger-arrow {
+      font-size: 9px;
+      transition: transform 0.2s ease;
+    }
+
+    .forge-minimal-select-wrap.open .forge-trigger-arrow {
+      transform: rotate(180deg);
+    }
+
+    .forge-custom-menu {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: -8px;
+      background-color: #ffffff;
+      border: 2.5px solid #000000;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+      padding: 5px;
+      display: none;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 112px;
+      z-index: 150;
+    }
+
+    .forge-minimal-select-wrap.open .forge-custom-menu {
+      display: flex;
+      animation: popInMenu 0.16s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes popInMenu {
+      from { opacity: 0; transform: translateY(6px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .forge-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-family: var(--font-card);
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #000000;
+      cursor: pointer;
+      transition: background-color 0.12s ease;
+    }
+
+    .forge-menu-item:hover {
+      background-color: rgba(0, 0, 0, 0.08);
+    }
+
+    .forge-menu-item.active {
+      background-color: #000000;
+      color: #ffffff;
+    }
+
+    .forge-color-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid #000000;
+      flex-shrink: 0;
+    }
+
+    .forge-menu-item.active .forge-color-dot {
+      border-color: #ffffff;
+    }
+
+    .forge-minimal-select {
+      appearance: none;
+      -webkit-appearance: none;
+      background: transparent;
+      border: none;
+      color: #000000;
+      font-family: var(--font-card);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 16px 4px 4px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .forge-minimal-arrow {
+      position: absolute;
+      right: 4px;
+      font-size: 9px;
+      color: #000000;
+      pointer-events: none;
+    }
+
+    .forge-minimal-input {
+      background: transparent;
+      border: none;
+      color: #000000;
+      font-family: var(--font-card);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 6px;
+      width: 150px;
+      outline: none;
+    }
+
+    .forge-minimal-input::placeholder {
+      color: rgba(0, 0, 0, 0.42);
+      font-weight: 600;
+    }
+
+    .forge-minimal-check {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background-color: #000000;
+      color: #ffffff;
+      border: none;
+      font-size: 14px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .forge-minimal-check:hover {
+      transform: scale(1.1) !important;
+      box-shadow: none !important;
+      opacity: 0.85;
+    }
+
+    .spire-forge-popover.active {
+      display: flex;
+      animation: popInCard 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes popInCard {
+      from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(0.95); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+    }
+
+    /* 放入時間軸格子後變成的精簡橫向卡帶條 */
     .tape-card {
       background-color: #ffffff;
       color: var(--header-bg);
@@ -929,11 +1372,6 @@
       color: rgba(255, 255, 255, 0.35) !important;
     }
 
-    .dock-slots .tape-card {
-      width: 170px;
-      flex-shrink: 0;
-    }
-
     .tape-card.selected {
       border: 2px solid var(--accent-color) !important;
       box-shadow: 0 0 10px var(--accent-color), 2px 2px 0px var(--header-bg) !important;
@@ -965,33 +1403,10 @@
       letter-spacing: 0.5px;
     }
 
-    input[type="text"] {
-      font-family: var(--font-card);
-      background-color: var(--header-bg);
-      color: var(--accent-color);
-      border: 2px solid rgba(255, 255, 255, 0.25);
-      padding: 4px 8px;
-      font-size: 12px;
-      font-weight: 700;
-      outline: none;
-    }
-
-    input[type="text"]:focus {
-      border-color: var(--accent-color);
-    }
-
-    .hint-text {
-      font-family: var(--font-ui);
-      font-size: 10px;
-      color: #777777;
-      letter-spacing: 0.5px;
-      font-weight: 700;
-    }
-
     /* 系統狀態通知條 */
     .system-toast {
       position: fixed;
-      bottom: 202px;
+      top: 54px;
       right: 14px;
       background-color: var(--header-bg);
       color: var(--accent-color);
@@ -1003,7 +1418,7 @@
       z-index: 200;
       opacity: 0;
       pointer-events: none;
-      transform: translateY(8px);
+      transform: translateY(-8px);
       transition: opacity 0.2s, transform 0.2s;
     }
 
@@ -1136,31 +1551,22 @@
   <!-- 無干擾系統通知氣泡 -->
   <div class="system-toast" id="system-toast"></div>
 
-  <!-- 下方卡帶操作台 -->
-  <div class="dock-area">
-    <div class="workbench-toolbar">
-      <div class="workbench-section">
-        <input type="text" id="new-card-text" placeholder="輸入待辦事項..." style="width: 170px;" />
-        <input type="color" id="new-card-color" value="#ffffff" title="CARTRIDGE COLOR" />
-        <button class="accent" onclick="handleCreateCard()">+ 製作卡帶</button>
-      </div>
-
-      <div class="workbench-divider"></div>
-
-      <div class="workbench-section">
-        <span style="font-size: 10px; font-weight: 700; color: #888;">TARGET CONFIG:</span>
-        <input type="text" id="edit-card-text" placeholder="未選取卡帶" style="width: 170px;" disabled oninput="handleUpdateSelectedText(this.value)" />
-        <input type="color" id="edit-card-color" value="#ffffff" disabled onchange="handleUpdateSelectedColor(this.value)" />
-        <button id="btn-duplicate" class="secondary" disabled onclick="handleDuplicateSelected()">複製</button>
-        <button id="btn-delete" class="danger" disabled onclick="handleDeleteSelected()">刪除</button>
-      </div>
-
-      <span class="hint-text" style="margin-left: auto;">
-        [ALT + 拖曳]: 快速複製投放 / 點擊卡帶在下方操作台編輯
-      </span>
+  <!-- 點擊 + 卡牌或編輯按鈕時浮出的極簡輸入條 -->
+  <div class="spire-forge-popover" id="spire-forge-popover" onclick="event.stopPropagation()">
+    <div class="forge-minimal-select-wrap" id="forge-attr-dropdown">
+      <button type="button" class="forge-custom-trigger" onclick="toggleAttrDropdown(event)">
+        <span id="forge-attr-label">學習</span>
+        <span class="forge-trigger-arrow">▼</span>
+      </button>
+      <div class="forge-custom-menu" id="forge-custom-menu"></div>
     </div>
+    <input type="text" id="forge-card-text" class="forge-minimal-input" placeholder="輸入待辦事項..." />
+    <button class="forge-minimal-check" id="forge-submit-btn" onclick="submitForgeCard()" title="確認">✓</button>
+  </div>
 
-    <div class="dock-slots" id="dock-container" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'dock')" onclick="deselectCard(event)"></div>
+  <!-- 底部純懸浮《Slay the Spire》扇形手牌區（無黑色大欄位底板） -->
+  <div class="spire-hand-stage" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'dock')">
+    <div class="spire-hand-fan" id="dock-container"></div>
   </div>
 
   <script>
@@ -1171,6 +1577,101 @@
     ];
     const DAY_NAMES = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
     const MONTH_ABBR = ["Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.", "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."];
+
+    // 卡牌屬性與對應顏色對照表（現代直覺分類）
+    const CARD_ATTRIBUTES = {
+      study: { label: "學習", color: "#12b5ff" },
+      fun:   { label: "娛樂", color: "#ffe600" },
+      work:  { label: "工作", color: "#ff333b" },
+      life:  { label: "生活", color: "#ffffff" },
+      sport: { label: "運動", color: "#2ed573" },
+      art:   { label: "創作", color: "#a55eea" }
+    };
+
+    // 常見中文待辦快速英譯詞庫（並搭配線上自動翻譯備援）
+    const QUICK_TRANSLATE_DICT = {
+      "英文": "ENGLISH",
+      "英文課": "ENGLISH CLASS",
+      "數學": "MATHEMATICS",
+      "數學課": "MATH CLASS",
+      "讀書": "READING & STUDY",
+      "學習": "STUDY SESSION",
+      "看書": "BOOK READING",
+      "寫作業": "HOMEWORK",
+      "複習": "REVIEW STUDY",
+      "看電影": "WATCH MOVIE",
+      "電影": "MOVIE TIME",
+      "打遊戲": "GAMING TIME",
+      "遊戲": "VIDEO GAMES",
+      "休息": "REST & RELAX",
+      "追劇": "BINGE WATCHING",
+      "聽音樂": "LISTEN TO MUSIC",
+      "開會": "TEAM MEETING",
+      "會議": "MEETING",
+      "寫程式": "CODING",
+      "工作": "DEEP WORK",
+      "報告": "PROJECT REPORT",
+      "整理房間": "CLEAN ROOM",
+      "買菜": "GROCERY SHOPPING",
+      "購物": "SHOPPING",
+      "洗衣服": "LAUNDRY",
+      "吃飯": "DINING",
+      "健身": "WORKOUT",
+      "運動": "EXERCISE",
+      "跑步": "RUNNING",
+      "游泳": "SWIMMING",
+      "畫畫": "DRAWING",
+      "設計": "DESIGN WORK",
+      "寫作": "WRITING"
+    };
+
+    function getFallbackEnglishSub(text) {
+      const clean = text.trim();
+      if (!clean) return "TASK";
+      if (/^[A-Za-z0-9\s\-_.,!?&/+]+$/.test(clean)) {
+        return clean.toUpperCase();
+      }
+      if (QUICK_TRANSLATE_DICT[clean]) {
+        return QUICK_TRANSLATE_DICT[clean];
+      }
+      for (const [zh, en] of Object.entries(QUICK_TRANSLATE_DICT)) {
+        if (clean.includes(zh)) return en;
+      }
+      return "QUEST LOG";
+    }
+
+    async function autoTranslateCardTitle(cardId, text) {
+      const clean = text.trim();
+      if (!clean) return;
+      if (/^[A-Za-z0-9\s\-_.,!?&/+]+$/.test(clean)) {
+        if (state.cards[cardId]) {
+          state.cards[cardId].enTitle = clean.toUpperCase();
+          saveToStorage();
+          renderAllCards();
+        }
+        return;
+      }
+      if (QUICK_TRANSLATE_DICT[clean]) {
+        if (state.cards[cardId]) {
+          state.cards[cardId].enTitle = QUICK_TRANSLATE_DICT[clean];
+          saveToStorage();
+          renderAllCards();
+        }
+        return;
+      }
+      try {
+        const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(clean)}&langpair=zh-TW|en`);
+        const data = await res.json();
+        const translated = data?.responseData?.translatedText;
+        if (translated && state.cards[cardId] && state.cards[cardId].text === text) {
+          state.cards[cardId].enTitle = translated.toUpperCase().slice(0, 28);
+          saveToStorage();
+          renderAllCards();
+        }
+      } catch (e) {
+        // 離線或 API 逾時時維持預設英文副標
+      }
+    }
 
     // 預設 Client ID
     const DEFAULT_GOOGLE_CLIENT_ID = "865993916714-o0h883itsqd3lvgbatmkgqrqqhbrmuhf.apps.googleusercontent.com";
@@ -1235,13 +1736,14 @@
       loadFromStorage();
       applyTheme();
       updateWeekTimeline();
-      updateWorkbenchUI();
       initGoogleAuthSettings();
       initChainDragPhysics();
 
       document.addEventListener("click", () => {
         const modal = document.getElementById("settings-modal");
         if (modal) modal.classList.remove("active");
+        closeForgePopover();
+        closeAllRadialMenus();
       });
 
       // 每分鐘自動檢視時間，過期卡帶即時變為 CELL 底色
@@ -1278,7 +1780,7 @@
         chainCurrentDeltaX = delta;
 
         const stageWidth = stage.offsetWidth || window.innerWidth;
-        const baseOffsetPx = -stageWidth; // 中間那週位於 -100% 舞台寬度
+        const baseOffsetPx = -stageWidth;
         track.style.transform = `translate3d(${baseOffsetPx + delta}px, 0, 0)`;
       };
 
@@ -1292,13 +1794,12 @@
         const elapsed = Math.max(Date.now() - chainStartTime, 1);
         const velocity = Math.abs(chainCurrentDeltaX) / elapsed;
 
-        // 拖動超過舞台寬度 14% 或快速甩動即觸發切換上/下週
         const threshold = stageWidth * 0.14;
         let direction = 0;
         if (chainCurrentDeltaX < -threshold || (chainCurrentDeltaX < -35 && velocity > 0.35)) {
-          direction = 1; // 往左拉 -> 進入下一週
+          direction = 1;
         } else if (chainCurrentDeltaX > threshold || (chainCurrentDeltaX > 35 && velocity > 0.35)) {
-          direction = -1; // 往右拉 -> 回到上一週
+          direction = -1;
         }
 
         chainIsAnimating = true;
@@ -1328,7 +1829,6 @@
           }, 360);
         }
 
-        // 延遲清除拖動旗標，避免放開滑鼠瞬間誤觸資料夾 onclick
         setTimeout(() => {
           chainHasMoved = false;
         }, 60);
@@ -1839,7 +2339,7 @@
 
         folder.onclick = (e) => {
           e.stopPropagation();
-          if (chainHasMoved) return; // 若剛剛是在左右拖動鍊條切週次，則不觸發點開資料夾
+          if (chainHasMoved) return;
           toggleDayFolder(dateKey);
         };
 
@@ -2050,6 +2550,11 @@
         selectCard(card.id);
       };
 
+      div.ondblclick = (e) => {
+        e.stopPropagation();
+        openForgePopover("edit", card.id);
+      };
+
       const titleSpan = document.createElement("span");
       titleSpan.textContent = card.text;
 
@@ -2063,13 +2568,686 @@
       return div;
     }
 
+    function closeAllRadialMenus() {
+      document.querySelectorAll(".spire-card-slot.radial-open").forEach(el => {
+        el.classList.remove("radial-open");
+        el.draggable = true;
+      });
+      document.querySelectorAll(".radial-circle-btn.active-hover").forEach(btn => {
+        btn.classList.remove("active-hover");
+      });
+    }
+
+    /* ========================================================
+       20 種像素怪獸角色圖鑑資料庫（14x14 Pixel Matrix）
+       ======================================================== */
+    const PIXEL_MONSTER_ROSTER = [
+      {
+        name: "Flying Geometry.",
+        bg: "#ffffff",
+        pal: { K: "#111111", W: "#ffffff", B: "#333333", R: "#d94e4e", Y: "#ffdf00" },
+        grid: [
+          "......Y.......",
+          "......K.......",
+          "....KKK.......",
+          "...KBBBK.KK...",
+          "..KBBBBBKBBK..",
+          ".KWWKWWKBBBBK.",
+          ".KWKWWKKBBBBBK",
+          ".KKKKKKKKRRRRK",
+          "..KBBBBBBKKKK.",
+          "...KBBBBBK....",
+          "...KK...KK....",
+          "..KWWK.KWWK...",
+          "..KKKK.KKKK...",
+          ".............."
+        ]
+      },
+      {
+        name: "Crimson Eyes Ghost.",
+        bg: "#12b5ff",
+        pal: { K: "#111111", W: "#ffffff", R: "#ff2a3c", Y: "#ffd400", C: "#7ce8ff" },
+        grid: [
+          "....KYKYK.....",
+          "....KYYYK.....",
+          ".KK.KKKKK.KK..",
+          ".KWKRRRRRKWK..",
+          "..KRRRRRRRK...",
+          ".KRRWKWKWKRRK.",
+          ".KRRRRRRRRRRK.",
+          "K.KRRRRRRRRK.K",
+          "K..KKKKKKKK..K",
+          "K...KRRRRK...K",
+          "K...KYYYYK...K",
+          ".C..KYYYYK....",
+          "C.C.KK..KK....",
+          ".C.KKK..KKK..."
+        ]
+      },
+      {
+        name: "Rejoice Mask Ball.",
+        bg: "#ffe600",
+        pal: { K: "#111111", W: "#ffffff", O: "#ff9933" },
+        grid: [
+          "....KKKKKK....",
+          "..KKWWWWWWKK..",
+          ".KWWWWWWWWWWK.",
+          "KWWKWWKWWWWWWK",
+          "KWOOOKWWWWWWWK",
+          "KOOOOOKWWWWWWK",
+          ".KOOOKWWWWWWK.",
+          "..KKKWWWWWWK..",
+          "....KKKKKK....",
+          "....K....K....",
+          "....KWWWWK....",
+          "...KWWKWWWK...",
+          "....KWWWWK....",
+          "....KK..KK...."
+        ]
+      },
+      {
+        name: "Separated Sausage Freak.",
+        bg: "#ff333b",
+        pal: { K: "#111111", W: "#ffffff", B: "#38b6ff", G: "#555555", Y: "#ffe600" },
+        grid: [
+          ".....KKKKK....",
+          "....KBBBBBK...",
+          "...KBBWKWBBK..",
+          "...KBBWKWBBK..",
+          "....KBBBBBK...",
+          ".Y...KKKKK....",
+          "K.K....K......",
+          "KGK..KKKKK....",
+          "KGKKKBBBBBK...",
+          "KKK.KBBBBBBK..",
+          ".....KBBBBK...",
+          ".....KK..KK...",
+          "....KBBK..KK..",
+          "....KKKK......"
+        ]
+      },
+      {
+        name: "Three Green Beans.",
+        bg: "#ffe600",
+        pal: { K: "#111111", W: "#ffffff", G: "#4cd137", P: "#b53471" },
+        grid: [
+          "....KK........",
+          "...KPPK.......",
+          "...KGGGK......",
+          "..KGGWKWK.....",
+          "...KGGGK......",
+          "..KGGGGGK.....",
+          "..KGGGGGK.....",
+          "..KGGWKWK.....",
+          "..KGGGGGK.....",
+          "...KGGGK......",
+          "...KK.KK......",
+          "..KWWK.KK.....",
+          "..KKKK.KWWK...",
+          ".......KKKK..."
+        ]
+      },
+      {
+        name: "Blue Rabbit Ball.",
+        bg: "#b8b8b8",
+        pal: { K: "#111111", W: "#ffffff", R: "#ff2e3b", Y: "#ffd400" },
+        grid: [
+          "...KK.KK......",
+          "..KRRKRRK.....",
+          "..KRRKRRK.KYK.",
+          "..KRRRRRKKKK..",
+          "..KWWKWWKRRK..",
+          "..KRRRRRRRRK..",
+          "..KRRRRRRRRKK.",
+          "..KWWWWWWWWK..",
+          "..KWWWWWWWWKK.",
+          "..KRRRRRRRRK..",
+          "...KRRRRRRK...",
+          "...KK...KK....",
+          "..KRRK.KRRK...",
+          "..KKKK.KKKK..."
+        ]
+      },
+      {
+        name: "Fashion Icon Mr Eyes.",
+        bg: "#ffffff",
+        pal: { K: "#111111", W: "#ffffff", Y: "#ffd400" },
+        grid: [
+          "......K.......",
+          "..K...K...K...",
+          "..KK.KKK.KK...",
+          "...KKKKKKK....",
+          "..KKKKKKKKK...",
+          ".KKKKWWKKKKK..",
+          ".KKKWKKWKKKKY.",
+          ".KKKKWWKKKKK..",
+          "..KKKKKKKKK...",
+          ".K.KK...KK.K..",
+          ".K.KWK.KWK.K..",
+          "...KWK.KWK....",
+          "..KKWK.KWKK...",
+          "..KKKK.KKKK..."
+        ]
+      },
+      {
+        name: "Green Shit Stool.",
+        bg: "#12b5ff",
+        pal: { K: "#111111", W: "#ffffff", Y: "#ffd400", G: "#4cd137" },
+        grid: [
+          "......W.......",
+          ".....KKK......",
+          "....KGGGK.....",
+          "...KYYYYYK....",
+          "..KGGGGGGGK...",
+          ".KYYYYYYYYYK..",
+          "KYYWKWKWKWYYK.",
+          "KYYYYYYYYYYYK.",
+          ".KKKKKKKKKKK..",
+          "...KYYYYYK....",
+          "..KKYYYYYKK...",
+          "....K...K.....",
+          "...KWWK.KWWK..",
+          "...KKKK.KKKK.."
+        ]
+      },
+      {
+        name: "Four Hands Bluestar.",
+        bg: "#ff333b",
+        pal: { K: "#111111", W: "#ffffff", B: "#29b6f6" },
+        grid: [
+          "....K...K.....",
+          ".KK.KB.BK.KK..",
+          "KBBKKBBBKKBBK.",
+          ".KKBBBBBBBKK..",
+          "..KBBWKWBBK...",
+          ".KKBBBBBBBKK..",
+          "KBBKBBBBBKBBK.",
+          ".KK.KBBBK.KK..",
+          "....KBBBK.....",
+          "....KK.KK.....",
+          "....KB.BK.....",
+          "...KWWKWWK....",
+          "..KWWWWWWWK...",
+          "..KKKKKKKKK..."
+        ]
+      },
+      {
+        name: "Snowman Clown.",
+        bg: "#12b5ff",
+        pal: { K: "#111111", W: "#ffffff", R: "#d63031", O: "#ff7675", B: "#5d4037" },
+        grid: [
+          "..B.KKKKK.B...",
+          ".BBKRRRRRKBB..",
+          "...KKKKKKK....",
+          "...KWWKWWK....",
+          ".OOKWWWWWK....",
+          "...KRRRRRK....",
+          "..KWWWWWWWK...",
+          ".KWWWWKWWWWK..",
+          "K.KWWWKWWWK.K.",
+          "K.KWWWWWWWK.K.",
+          "...KWWWWWK....",
+          "....KKKKK.....",
+          "...KKKKKKK....",
+          ".............."
+        ]
+      },
+      {
+        name: "West Fish Cowboy.",
+        bg: "#ffe600",
+        pal: { K: "#111111", W: "#ffffff", R: "#e15f41", B: "#8c6239", G: "#596275" },
+        grid: [
+          ".....KKKKK....",
+          "....KBBBBBK...",
+          "..KKKKKKKKKK..",
+          ".KRRRRRRRRRRKK",
+          "KRRWKRKRRRRKRK",
+          "KRRRRRRRRRRKRK",
+          ".KRRRRRRRRRRKK",
+          "..KKKGGGGKKK..",
+          "....KGGGGK....",
+          "....KGGGGK....",
+          "....KK..KK....",
+          "...KBBK.KBBK..",
+          "..KBBBK.KBBBK.",
+          "..KKKKK.KKKKK."
+        ]
+      },
+      {
+        name: "Five Eyes Frog Strange.",
+        bg: "#12b5ff",
+        pal: { K: "#111111", W: "#ffffff", G: "#44bd32", P: "#ff7979" },
+        grid: [
+          "..KKKKKKKKKK..",
+          ".KWKWKWKWKWKK.",
+          "KGGGGGGGGGGGGK",
+          "KPPPPPPPPPPPPK",
+          "KKKKKKKKKKKKKK",
+          ".KPPPPPPPPPPK.",
+          "..KKKKKKKKKK..",
+          "....KGGGGK....",
+          "...KGGKKGGK...",
+          "...KGG..GGK...",
+          "..KWWK..KWWK..",
+          ".KWWWWKKWWWWK.",
+          ".KKKKKKKKKKKK.",
+          ".............."
+        ]
+      },
+      {
+        name: "Aberrance Kiwi Fruit.",
+        bg: "#b8b8b8",
+        pal: { K: "#111111", W: "#ffffff", G: "#4cd137", Y: "#fbc531", C: "#7ed6df" },
+        grid: [
+          ".C...K.K.K....",
+          "CKC.KGGGGGK...",
+          ".C.KGGGGGGGK..",
+          ".K.KGGWKWGGKK.",
+          ".K.KGGGGGGGGK.",
+          ".K..KKKKKKK...",
+          ".KKKYYYYYYYKK.",
+          ".K.KYYYYYYYK.K",
+          ".K.KYYYYYYYK.K",
+          ".K..KKKKKKK...",
+          ".K...K...K....",
+          ".K..KWWKWWK...",
+          ".K..KKKKKKK...",
+          ".............."
+        ]
+      },
+      {
+        name: "The White Dinosaur.",
+        bg: "#ffe600",
+        pal: { K: "#111111", W: "#ffffff", B: "#2f3640" },
+        grid: [
+          ".....W..W..W..",
+          "....KWKKWKKWK.",
+          "....KKKKKKKKK.",
+          "...KWWWWWWWWW.",
+          "..KWWKWWBBBBBK",
+          ".KWWWKWWBBBBBK",
+          "KWWWWKWWBBBBBK",
+          ".KWWWKWWBBBBBK",
+          "..KKKKKKKKKKK.",
+          "...KK.KK.KK...",
+          "...KK.KK.KK...",
+          "..............",
+          "..............",
+          ".............."
+        ]
+      },
+      {
+        name: "Tricolor Ivory.",
+        bg: "#12b5ff",
+        pal: { K: "#111111", W: "#ffffff", Y: "#fbc531", R: "#eb4d4b" },
+        grid: [
+          "....KKKKKK....",
+          "...KYYYYYYK...",
+          "..KKWKWKWKK...",
+          ".KWWWWWWWWWK..",
+          "..KKWKWKWKK...",
+          ".KRRRRRRRRRRK.",
+          "KRRRRRRRRRRRRK",
+          ".KRRRRRRRRRRK.",
+          "W.KKKK..KKKK.W",
+          "WW...KRRK...WW",
+          "....KKKKKK....",
+          "...KKKKKKKK...",
+          "..............",
+          ".............."
+        ]
+      },
+      {
+        name: "Sexy Bomb Man.",
+        bg: "#ffffff",
+        pal: { K: "#111111", W: "#ffffff", Y: "#ffa801", R: "#ff5e57" },
+        grid: [
+          "........Y.....",
+          ".......KYK....",
+          ".......K......",
+          ".....KKKKK....",
+          "....KKKKKKK...",
+          "....KKWKWKK...",
+          ".KK.KKWKWKK.KK",
+          "K..KKKKKKKK..K",
+          "K...KKKKKK...K",
+          ".KK..KKKK..KK.",
+          "...KKK..KKK...",
+          "....K....K....",
+          "...RR....RR...",
+          ".............."
+        ]
+      },
+      {
+        name: "Pixel Phantom.",
+        bg: "#ffe600",
+        pal: { K: "#111111", W: "#ffffff", P: "#9c88ff", C: "#00a8ff" },
+        grid: [
+          "....KKKKKK....",
+          "...KPPPPPPK...",
+          "..KPPPPPPPPK..",
+          ".KPPWWKKWWPPK.",
+          ".KPPWKPPKWPPK.",
+          ".KPPPPPPPPPPK.",
+          ".KPPPKKKKPPPK.",
+          ".KPPPPPPPPPPK.",
+          ".KPPPPPPPPPPK.",
+          ".KPPKPPPPKPPK.",
+          ".KPK.KPPK.KPK.",
+          ".KK...KK...KK.",
+          "..............",
+          ".............."
+        ]
+      },
+      {
+        name: "Horned Slime King.",
+        bg: "#ff333b",
+        pal: { K: "#111111", W: "#ffffff", G: "#00d2d3", Y: "#feca57" },
+        grid: [
+          "..KK......KK..",
+          ".KYYK....KYYK.",
+          "..KK.KKKK.KK..",
+          "....KGGGGK....",
+          "..KKGGGGGGKK..",
+          ".KGGWKKKKWGGK.",
+          ".KGGWKWWKWGGK.",
+          "KGGGGGGGGGGGGK",
+          "KGGGKKKKKKGGGK",
+          "KGGGGGGGGGGGGK",
+          ".KKKKKKKKKKKK.",
+          "..............",
+          "..............",
+          ".............."
+        ]
+      },
+      {
+        name: "Retro Cyclops Bot.",
+        bg: "#b8b8b8",
+        pal: { K: "#111111", W: "#ffffff", O: "#ff9f43", R: "#ee5253" },
+        grid: [
+          "......RR......",
+          "......KK......",
+          "...KKKKKKKK...",
+          "..KOOOOOOOO K..",
+          "..KOOWWWWWOOK.",
+          "..KOOWKKWWOOK.",
+          "..KOOOOOOOOOK.",
+          "...KKKKKKKK...",
+          ".KK.KOOOOOK.KK",
+          "K..KKOOOOOKK..K",
+          "....KOOOOOK...",
+          "....KK...KK...",
+          "...KKK...KKK..",
+          ".............."
+        ]
+      },
+      {
+        name: "Tri-Eye Alley Cat.",
+        bg: "#ffffff",
+        pal: { K: "#111111", W: "#ffffff", Y: "#ffd32a", P: "#ff6b81" },
+        grid: [
+          "..KK......KK..",
+          ".KYYK....KYYK.",
+          ".KYYYKKKKYYYK.",
+          ".KYYYYYYYYYYK.",
+          "KYYWKWKWKWYYYK",
+          "KYYYYYYYYYYYYK",
+          ".KYYYYPPYYYYK.",
+          "..KKKKKKKKKK..",
+          "...KYYYYYYK...",
+          "...KYYYYYYK.KK",
+          "...KK....KK.KY",
+          "..KWWK..KWWKK.",
+          "..KKKK..KKKK..",
+          ".............."
+        ]
+      }
+    ];
+
+    function buildPixelMonsterSvg(monster) {
+      let rects = "";
+      for (let r = 0; r < monster.grid.length; r++) {
+        const rowStr = monster.grid[r];
+        for (let c = 0; c < rowStr.length; c++) {
+          const ch = rowStr[c];
+          if (ch !== "." && ch !== " " && monster.pal[ch]) {
+            rects += `<rect x="${c}" y="${r}" width="1" height="1" fill="${monster.pal[ch]}"/>`;
+          }
+        }
+      }
+      return `<svg class="monster-pixel-svg" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`;
+    }
+
+    /* 建立底部 BIGD MONSTER FRIENDS 風格手牌元素（含 20 種像素怪獸 + 長按拖曳至圓圈放開觸發） */
+    function createSpireHandCard(card, index, totalCount) {
+      const slot = document.createElement("div");
+      slot.id = card.id;
+      slot.draggable = true;
+      slot.className = "spire-card-slot" + (card.id === selectedCardId ? " selected" : "");
+
+      // 依卡牌 ID 穩定對應 20 種像素怪獸之一
+      const numCode = parseInt(card.id.replace(/\D/g, "").slice(-4) || String(index + 1), 10);
+      const monster = PIXEL_MONSTER_ROSTER[numCode % PIXEL_MONSTER_ROSTER.length];
+
+      // 取得屬性資訊與對應色彩
+      const attrKey = card.attr && CARD_ATTRIBUTES[card.attr] ? card.attr : "study";
+      const attrInfo = CARD_ATTRIBUTES[attrKey];
+      const cardTint = card.color || attrInfo.color;
+      slot.style.setProperty("--card-tint", cardTint);
+
+      // 英文翻譯副標與隨機點數
+      const enSubText = card.enTitle || getFallbackEnglishSub(card.text);
+      const cardPoints = typeof card.points === "number" ? card.points : ((numCode * 17) % 90) + 10;
+
+      // 平時呈扇形弧度堆疊（左右微傾 + 弧線下沉），且約 1/3 藏於畫面底部外
+      const mid = (totalCount - 1) / 2;
+      const offsetFromCenter = index - mid;
+      const rotDeg = Math.max(-18, Math.min(18, offsetFromCenter * 4.5));
+      const arcY = Math.pow(Math.abs(offsetFromCenter), 1.65) * 4.2;
+      const overlapPx = totalCount > 6 ? -40 : (totalCount > 3 ? -28 : -16);
+
+      slot.style.setProperty("--fan-rot", `${rotDeg.toFixed(1)}deg`);
+      slot.style.setProperty("--arc-y", `${arcY.toFixed(1)}px`);
+      slot.style.setProperty("--overlap", `${overlapPx}px`);
+      slot.style.zIndex = String(10 + index);
+
+      const monsterSvgHtml = buildPixelMonsterSvg(monster);
+
+      // 長按滑動手勢狀態（按住 400ms 彈出三個圓圈，拖到對應圓圈上放開才觸發）
+      let pressTimer = null;
+      let isRadialActive = false;
+      let ignoreNextClick = false;
+      let pressStartX = 0;
+      let pressStartY = 0;
+
+      const updateRadialHover = (clientX, clientY) => {
+        const elUnder = document.elementFromPoint(clientX, clientY);
+        const hoveredBtn = elUnder ? elUnder.closest(".radial-circle-btn") : null;
+        slot.querySelectorAll(".radial-circle-btn").forEach(btn => {
+          btn.classList.toggle("active-hover", btn === hoveredBtn);
+        });
+        return hoveredBtn;
+      };
+
+      const executeRadialAction = (action) => {
+        if (action === "edit") {
+          openForgePopover("edit", card.id);
+        } else if (action === "duplicate") {
+          duplicateCardById(card.id);
+        } else if (action === "delete") {
+          deleteCardById(card.id);
+        }
+      };
+
+      const onGlobalMove = (clientX, clientY) => {
+        if (!isRadialActive) {
+          if (Math.hypot(clientX - pressStartX, clientY - pressStartY) > 6) {
+            clearTimeout(pressTimer);
+          }
+          return;
+        }
+        updateRadialHover(clientX, clientY);
+      };
+
+      const onGlobalRelease = (clientX, clientY) => {
+        clearTimeout(pressTimer);
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+        window.removeEventListener("touchmove", handleTouchMove);
+        window.removeEventListener("touchend", handleTouchEnd);
+
+        if (isRadialActive) {
+          const targetBtn = updateRadialHover(clientX, clientY);
+          const action = targetBtn ? targetBtn.dataset.action : null;
+          isRadialActive = false;
+          ignoreNextClick = true;
+          closeAllRadialMenus();
+          if (action) {
+            executeRadialAction(action);
+          }
+        }
+      };
+
+      const handleMouseMove = (e) => onGlobalMove(e.clientX, e.clientY);
+      const handleMouseUp = (e) => onGlobalRelease(e.clientX, e.clientY);
+      const handleTouchMove = (e) => {
+        if (e.touches.length === 1) {
+          if (isRadialActive) e.preventDefault();
+          onGlobalMove(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      };
+      const handleTouchEnd = (e) => {
+        const touch = e.changedTouches[0];
+        onGlobalRelease(touch ? touch.clientX : pressStartX, touch ? touch.clientY : pressStartY);
+      };
+
+      const startPress = (x, y) => {
+        isRadialActive = false;
+        ignoreNextClick = false;
+        pressStartX = x;
+        pressStartY = y;
+        clearTimeout(pressTimer);
+
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mouseup", handleMouseUp);
+        window.addEventListener("touchmove", handleTouchMove, { passive: false });
+        window.addEventListener("touchend", handleTouchEnd);
+
+        pressTimer = setTimeout(() => {
+          isRadialActive = true;
+          slot.draggable = false;
+          closeAllRadialMenus();
+          slot.classList.add("radial-open");
+          updateRadialHover(x, y);
+        }, 400);
+      };
+
+      slot.addEventListener("mousedown", (e) => {
+        if (e.button !== 0) return;
+        startPress(e.clientX, e.clientY);
+      });
+
+      slot.addEventListener("touchstart", (e) => {
+        if (e.touches.length === 1) {
+          startPress(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: true });
+
+      slot.ondragstart = (e) => {
+        if (isRadialActive) {
+          e.preventDefault();
+          return;
+        }
+        clearTimeout(pressTimer);
+        closeAllRadialMenus();
+        draggedCardId = card.id;
+        isAltCloneMode = e.altKey;
+        e.dataTransfer.setData("text/plain", card.id);
+      };
+
+      slot.onclick = (e) => {
+        e.stopPropagation();
+        if (ignoreNextClick) {
+          ignoreNextClick = false;
+          return;
+        }
+        closeAllRadialMenus();
+        selectCard(card.id);
+      };
+
+      slot.innerHTML = `
+        <div class="card-radial-menu">
+          <button class="radial-circle-btn" data-action="edit" title="修改卡牌">✎</button>
+          <button class="radial-circle-btn" data-action="duplicate" title="複製卡牌">⧉</button>
+          <button class="radial-circle-btn del" data-action="delete" title="刪除卡牌">✕</button>
+        </div>
+        <div class="spire-card-visual">
+          <div class="monster-header-block">
+            <div class="monster-task-title">${escapeHtml(card.text)}</div>
+            <div class="monster-sub-series">${escapeHtml(enSubText)}</div>
+          </div>
+          <div class="monster-pixel-stage">
+            ${monsterSvgHtml}
+          </div>
+          <div class="monster-footer-row">
+            <div class="monster-logo-stamp">${attrInfo.label}</div>
+            <div class="monster-points-tag">PT.${cardPoints}</div>
+          </div>
+        </div>
+      `;
+
+      return slot;
+    }
+
+    /* 建立手牌最右側帶有 + 號的新增卡牌槽位 */
+    function createAddPlusCard(index, totalCount) {
+      const slot = document.createElement("div");
+      slot.className = "spire-card-slot spire-add-slot";
+
+      const mid = (totalCount - 1) / 2;
+      const offsetFromCenter = index - mid;
+      const rotDeg = Math.max(-18, Math.min(18, offsetFromCenter * 4.5));
+      const arcY = Math.pow(Math.abs(offsetFromCenter), 1.65) * 4.2;
+      const overlapPx = totalCount > 6 ? -40 : (totalCount > 3 ? -28 : -16);
+
+      slot.style.setProperty("--fan-rot", `${rotDeg.toFixed(1)}deg`);
+      slot.style.setProperty("--arc-y", `${arcY.toFixed(1)}px`);
+      slot.style.setProperty("--overlap", `${overlapPx}px`);
+      slot.style.zIndex = String(10 + index);
+      slot.title = "點擊添加新卡牌到手牌中";
+
+      slot.onclick = (e) => {
+        e.stopPropagation();
+        openForgePopover("create");
+      };
+
+      slot.innerHTML = `
+        <div class="spire-card-visual spire-add-visual">
+          <div class="spire-add-plus">+</div>
+          <div class="spire-add-label">ADD CARD</div>
+        </div>
+      `;
+
+      return slot;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
     function renderAllCards() {
       document.querySelectorAll(".timeline-slot-dropzone, .week-slot-cell").forEach(cell => cell.innerHTML = "");
-      document.getElementById("dock-container").innerHTML = "";
+      const handContainer = document.getElementById("dock-container");
+      handContainer.innerHTML = "";
 
+      const handCards = [];
       Object.values(state.cards).forEach(card => {
         if (card.slot === "dock" || !card.slot) {
-          document.getElementById("dock-container").appendChild(createCardElement(card));
+          handCards.push(card);
         } else {
           const targetSlots = document.querySelectorAll(`[data-slot-id="${card.slot}"]`);
           targetSlots.forEach(targetSlot => {
@@ -2077,6 +3255,13 @@
           });
         }
       });
+
+      // 渲染扇形手牌 + 最後一張 + 號新增卡牌
+      const totalFanItems = handCards.length + 1;
+      handCards.forEach((card, idx) => {
+        handContainer.appendChild(createSpireHandCard(card, idx, totalFanItems));
+      });
+      handContainer.appendChild(createAddPlusCard(handCards.length, totalFanItems));
 
       // 更新 21 日軌道上所有資料夾的卡帶數量標章
       document.querySelectorAll(".day-folder").forEach(folderNode => {
@@ -2098,7 +3283,9 @@
 
     function handleDrop(e, targetSlotId) {
       e.preventDefault();
-      e.currentTarget.classList.remove("drag-over");
+      if (e.currentTarget && e.currentTarget.classList) {
+        e.currentTarget.classList.remove("drag-over");
+      }
 
       if (!draggedCardId || !state.cards[draggedCardId]) return;
 
@@ -2138,7 +3325,6 @@
 
     function selectCard(cardId) {
       selectedCardId = cardId;
-      updateWorkbenchUI();
       renderAllCards();
     }
 
@@ -2149,44 +3335,95 @@
           e.target.classList.contains("folder-wave-row") ||
           e.target.classList.contains("drawer-scroll-area") ||
           e.target.classList.contains("timeline-slot-dropzone") ||
-          e.target.classList.contains("week-slot-cell") ||
-          e.target.classList.contains("dock-slots")) {
+          e.target.classList.contains("week-slot-cell")) {
         selectedCardId = null;
-        updateWorkbenchUI();
+        closeForgePopover();
         renderAllCards();
       }
     }
 
-    function updateWorkbenchUI() {
-      const textInput = document.getElementById("edit-card-text");
-      const colorInput = document.getElementById("edit-card-color");
-      const btnDuplicate = document.getElementById("btn-duplicate");
-      const btnDelete = document.getElementById("btn-delete");
+    /* ========================================================
+       + 號卡牌新增與編輯迷你視窗控制
+       ======================================================== */
+    let forgeMode = "create";
+    let forgeEditingId = null;
+    let forgeSelectedAttr = "study";
+    let forgeSelectedColor = CARD_ATTRIBUTES.study.color;
 
-      if (selectedCardId && state.cards[selectedCardId]) {
-        const card = state.cards[selectedCardId];
-        textInput.disabled = false;
-        colorInput.disabled = false;
-        btnDuplicate.disabled = false;
-        btnDelete.disabled = false;
+    function renderAttrDropdownMenu() {
+      const menu = document.getElementById("forge-custom-menu");
+      if (!menu) return;
+      menu.innerHTML = "";
+      Object.entries(CARD_ATTRIBUTES).forEach(([key, info]) => {
+        const item = document.createElement("div");
+        item.className = "forge-menu-item" + (key === forgeSelectedAttr ? " active" : "");
+        item.innerHTML = `<span class="forge-color-dot" style="background-color: ${info.color};"></span><span>${info.label}</span>`;
+        item.onclick = (e) => {
+          e.stopPropagation();
+          selectAttrOption(key);
+          closeAttrDropdown();
+        };
+        menu.appendChild(item);
+      });
+    }
 
-        textInput.value = card.text;
-        colorInput.value = card.color;
-      } else {
-        textInput.disabled = true;
-        colorInput.disabled = true;
-        btnDuplicate.disabled = true;
-        btnDelete.disabled = true;
+    function toggleAttrDropdown(e) {
+      e.stopPropagation();
+      const wrap = document.getElementById("forge-attr-dropdown");
+      if (!wrap) return;
+      renderAttrDropdownMenu();
+      wrap.classList.toggle("open");
+    }
 
-        textInput.value = "";
-        textInput.placeholder = "未選取卡帶";
-        colorInput.value = "#ffffff";
+    function closeAttrDropdown() {
+      const wrap = document.getElementById("forge-attr-dropdown");
+      if (wrap) wrap.classList.remove("open");
+    }
+
+    function selectAttrOption(attrKey) {
+      const popover = document.getElementById("spire-forge-popover");
+      const labelEl = document.getElementById("forge-attr-label");
+      if (CARD_ATTRIBUTES[attrKey]) {
+        forgeSelectedAttr = attrKey;
+        forgeSelectedColor = CARD_ATTRIBUTES[attrKey].color;
+        if (labelEl) labelEl.textContent = CARD_ATTRIBUTES[attrKey].label;
+        if (popover) popover.style.backgroundColor = forgeSelectedColor;
       }
     }
 
-    function handleCreateCard() {
-      const textInput = document.getElementById("new-card-text");
-      const colorInput = document.getElementById("new-card-color");
+    function openForgePopover(mode = "create", cardId = null) {
+      forgeMode = mode;
+      forgeEditingId = cardId;
+      const popover = document.getElementById("spire-forge-popover");
+      const textInput = document.getElementById("forge-card-text");
+
+      if (mode === "edit" && cardId && state.cards[cardId]) {
+        const card = state.cards[cardId];
+        const attrKey = card.attr && CARD_ATTRIBUTES[card.attr] ? card.attr : "study";
+        textInput.value = card.text;
+        selectAttrOption(attrKey);
+        if (card.color) {
+          forgeSelectedColor = card.color;
+          if (popover) popover.style.backgroundColor = forgeSelectedColor;
+        }
+      } else {
+        textInput.value = "";
+        selectAttrOption("study");
+      }
+
+      closeAttrDropdown();
+      popover.classList.add("active");
+      setTimeout(() => textInput.focus(), 20);
+    }
+
+    function closeForgePopover() {
+      closeAttrDropdown();
+      const popover = document.getElementById("spire-forge-popover");
+      if (popover) popover.classList.remove("active");
+    }
+
+    function submitForgeCard() {
+      const textInput = document.getElementById("forge-card-text");
       const text = textInput.value.trim();
 
       if (!text) {
@@ -2194,41 +3431,54 @@
         return;
       }
 
-      const id = "CRYO_" + Date.now().toString().slice(-6);
-      state.cards[id] = {
-        id: id,
-        text: text,
-        color: colorInput.value,
-        slot: "dock"
-      };
+      const selectedAttr = forgeSelectedAttr || "study";
+      const finalColor = CARD_ATTRIBUTES[selectedAttr]?.color || forgeSelectedColor;
+      const fallbackEn = getFallbackEnglishSub(text);
 
-      textInput.value = "";
-      selectCard(id);
+      if (forgeMode === "edit" && forgeEditingId && state.cards[forgeEditingId]) {
+        const oldText = state.cards[forgeEditingId].text;
+        state.cards[forgeEditingId].text = text;
+        state.cards[forgeEditingId].attr = selectedAttr;
+        state.cards[forgeEditingId].color = finalColor;
+        if (typeof state.cards[forgeEditingId].points !== "number") {
+          state.cards[forgeEditingId].points = Math.floor(Math.random() * 90) + 10;
+        }
+        if (oldText !== text || !state.cards[forgeEditingId].enTitle) {
+          state.cards[forgeEditingId].enTitle = fallbackEn;
+          autoTranslateCardTitle(forgeEditingId, text);
+        }
+        selectCard(forgeEditingId);
+      } else {
+        const id = "CRYO_" + Date.now().toString().slice(-6);
+        const randomPoints = Math.floor(Math.random() * 90) + 10;
+        state.cards[id] = {
+          id: id,
+          text: text,
+          enTitle: fallbackEn,
+          attr: selectedAttr,
+          points: randomPoints,
+          color: finalColor,
+          slot: "dock"
+        };
+        autoTranslateCardTitle(id, text);
+        selectCard(id);
+      }
+
+      closeForgePopover();
       saveToStorage();
       renderAllCards();
     }
 
-    function handleUpdateSelectedText(val) {
-      if (!selectedCardId || !state.cards[selectedCardId]) return;
-      state.cards[selectedCardId].text = val;
-      saveToStorage();
-      renderAllCards();
-    }
-
-    function handleUpdateSelectedColor(val) {
-      if (!selectedCardId || !state.cards[selectedCardId]) return;
-      state.cards[selectedCardId].color = val;
-      saveToStorage();
-      renderAllCards();
-    }
-
-    function handleDuplicateSelected() {
-      if (!selectedCardId || !state.cards[selectedCardId]) return;
-      const orig = state.cards[selectedCardId];
+    function duplicateCardById(cardId) {
+      const orig = state.cards[cardId];
+      if (!orig) return;
       const newId = "CRYO_" + Date.now().toString().slice(-6);
       state.cards[newId] = {
         id: newId,
         text: orig.text,
+        enTitle: orig.enTitle || getFallbackEnglishSub(orig.text),
+        attr: orig.attr || "study",
+        points: Math.floor(Math.random() * 90) + 10,
         color: orig.color,
         slot: "dock"
       };
@@ -2237,18 +3487,18 @@
       renderAllCards();
     }
 
-    function handleDeleteSelected() {
-      if (!selectedCardId || !state.cards[selectedCardId]) return;
-      delete state.cards[selectedCardId];
-      selectedCardId = null;
-      updateWorkbenchUI();
+    function deleteCardById(cardId) {
+      if (!state.cards[cardId]) return;
+      delete state.cards[cardId];
+      if (selectedCardId === cardId) selectedCardId = null;
       saveToStorage();
       renderFolderWave();
       renderAllCards();
     }
 
-    document.getElementById("new-card-text").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") handleCreateCard();
+    document.getElementById("forge-card-text").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submitForgeCard();
+      if (e.key === "Escape") closeForgePopover();
     });
 
     window.onload = init;
