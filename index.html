@@ -28,9 +28,9 @@
     /* 全局 CSS 變數：支援四大系統顏色連動（含棋盤方格主色與次色） */
     :root {
       --bg-color: #002be8;       /* 藍色系：棋盤主格色、槽位底色、次要按鈕底色 */
-      --grid-alt-color: #ffffff; /* 方格次色：棋盤交錯格色（預設白色，可於齒輪設定調整） */
+      --grid-alt-color: #000000; /* 方格次色：棋盤交錯格色（預設純黑色，形成藍黑棋盤） */
       --header-bg: #000000;      /* 黑色系：標題列、導覽列、表頭、底板 */
-      --accent-color: #e2ff00;   /* 螢光黃系：TODAY按鈕、時間文字、選取光暈 */
+      --accent-color: #a8b090;   /* 柔和灰綠系：TODAY按鈕、時間文字、選取光暈 */
       --text-color: #ffffff;
       
       --font-ui: "Space Mono", "Consolas", "Courier New", monospace;
@@ -890,18 +890,18 @@
       cursor: grabbing;
     }
 
-    /* 內層純實色視覺卡牌：BIGD MONSTER FRIENDS 圖鑑滿版純色風格，平時呈扇形弧度堆疊且約 1/3 藏在畫面底部外 */
+    /* 內層純實色視覺卡牌：統一介面主題純白/主色，無多餘五彩顏色 */
     .spire-card-visual {
       position: absolute;
       bottom: -62px;
       left: 0;
       width: 136px;
       height: 192px;
-      background-color: var(--card-tint, #ffffff);
-      border: 2px solid #000000;
+      background-color: #ffffff;
+      border: 2px solid var(--header-bg);
       border-radius: 12px;
-      box-shadow: -3px 5px 0px #000000, 0 8px 18px rgba(0, 0, 0, 0.65);
-      color: #000000;
+      box-shadow: -3px 5px 0px var(--header-bg), 0 8px 18px rgba(0, 0, 0, 0.55);
+      color: var(--header-bg);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -921,12 +921,179 @@
     .spire-card-slot:hover .spire-card-visual,
     .spire-card-slot.radial-open .spire-card-visual {
       transform: translateY(-78px) rotate(0deg) scale(1.12) !important;
-      border-color: #000000;
+      border-color: var(--header-bg);
       box-shadow: 0 0 0 2.5px var(--accent-color), 0 14px 26px rgba(0, 0, 0, 0.85);
     }
+    /* 點擊 + 卡牌或編輯卡牌時浮出的極簡無黑框輸入條（與介面主題同色） */
+    .spire-forge-popover {
+      position: fixed;
+      bottom: 220px;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background-color: var(--header-bg);
+      border: none;
+      border-radius: 14px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+      padding: 7px 10px;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      z-index: 120;
+    }
 
-    .spire-card-slot.selected .spire-card-visual {
-      box-shadow: 0 0 0 2.5px var(--accent-color), -3px 5px 0px #000000;
+    .spire-forge-popover.active {
+      display: flex;
+      animation: popInCard 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes popInCard {
+      from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(0.95); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+    }
+
+    .forge-minimal-select-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      padding-right: 6px;
+      border-right: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .forge-custom-trigger {
+      background: var(--bg-color);
+      border: none;
+      border-radius: 8px;
+      color: #ffffff;
+      font-family: var(--font-card);
+      font-size: 12.5px;
+      font-weight: 800;
+      padding: 5px 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-transform: none;
+      letter-spacing: 0.3px;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .forge-custom-trigger:hover {
+      transform: none !important;
+      box-shadow: none !important;
+      background-color: var(--accent-color);
+      color: var(--header-bg);
+    }
+
+    .forge-trigger-arrow {
+      font-size: 9px;
+      transition: transform 0.2s ease;
+    }
+
+    .forge-minimal-select-wrap.open .forge-trigger-arrow {
+      transform: rotate(180deg);
+    }
+
+    /* 無黑框透明容器，讓選項從下往上逐一浮現 */
+    .forge-custom-menu {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 0;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 96px;
+      z-index: 150;
+    }
+
+    .forge-minimal-select-wrap.open .forge-custom-menu {
+      display: flex;
+    }
+
+    @keyframes itemPopUpStagger {
+      0% {
+        opacity: 0;
+        transform: translateY(14px) scale(0.88);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .forge-menu-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 7px 14px;
+      border: none;
+      border-radius: 10px;
+      background-color: var(--header-bg);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+      font-family: var(--font-card);
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #ffffff;
+      cursor: pointer;
+      opacity: 0;
+      animation: itemPopUpStagger 0.24s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation-delay: calc(var(--stagger-idx, 0) * 42ms);
+      transition: background-color 0.14s ease, color 0.14s ease, transform 0.14s ease;
+    }
+
+    .forge-menu-item:hover {
+      background-color: var(--bg-color);
+      color: #ffffff;
+      transform: translateY(-2px);
+    }
+
+    .forge-menu-item.active {
+      background-color: var(--accent-color);
+      color: var(--header-bg);
+    }
+
+    .forge-minimal-input {
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-family: var(--font-card);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 8px;
+      width: 155px;
+      outline: none;
+    }
+
+    .forge-minimal-input::placeholder {
+      color: rgba(255, 255, 255, 0.45);
+      font-weight: 600;
+    }
+
+    .forge-minimal-check {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background-color: var(--accent-color);
+      color: var(--header-bg);
+      border: none;
+      font-size: 14px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .forge-minimal-check:hover {
+      transform: scale(1.1) !important;
+      box-shadow: none !important;
+      opacity: 0.9;
     }
 
     /* 長按後在卡片上方彈出的三個圓圈操作圖示 */
@@ -1121,207 +1288,6 @@
       color: #000000;
     }
 
-    /* 點擊 + 卡牌或編輯卡牌時浮出的迷你輸入卡框 */
-    .spire-forge-popover {
-      position: fixed;
-      bottom: 220px;
-      left: 50%;
-      transform: translateX(-50%) translateY(10px);
-      background-color: #ffffff;
-      border: 2.5px solid #000000;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-      padding: 6px 10px;
-      display: none;
-      align-items: center;
-      gap: 6px;
-      z-index: 120;
-      transition: background-color 0.2s ease;
-    }
-
-    .spire-forge-popover.active {
-      display: flex;
-      animation: popInCard 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    }
-
-    @keyframes popInCard {
-      from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(0.95); }
-      to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-    }
-
-    .forge-minimal-select-wrap {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      padding-right: 6px;
-      border-right: 1.5px solid rgba(0, 0, 0, 0.18);
-    }
-
-    .forge-custom-trigger {
-      background: transparent;
-      border: none;
-      color: #000000;
-      font-family: var(--font-card);
-      font-size: 13px;
-      font-weight: 800;
-      padding: 4px 6px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      text-transform: none;
-      letter-spacing: 0;
-    }
-
-    .forge-custom-trigger:hover {
-      transform: none !important;
-      box-shadow: none !important;
-      opacity: 0.75;
-    }
-
-    .forge-trigger-arrow {
-      font-size: 9px;
-      transition: transform 0.2s ease;
-    }
-
-    .forge-minimal-select-wrap.open .forge-trigger-arrow {
-      transform: rotate(180deg);
-    }
-
-    .forge-custom-menu {
-      position: absolute;
-      bottom: calc(100% + 10px);
-      left: -8px;
-      background-color: #ffffff;
-      border: 2.5px solid #000000;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
-      padding: 5px;
-      display: none;
-      flex-direction: column;
-      gap: 3px;
-      min-width: 112px;
-      z-index: 150;
-    }
-
-    .forge-minimal-select-wrap.open .forge-custom-menu {
-      display: flex;
-      animation: popInMenu 0.16s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    }
-
-    @keyframes popInMenu {
-      from { opacity: 0; transform: translateY(6px) scale(0.95); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    .forge-menu-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 10px;
-      border-radius: 8px;
-      font-family: var(--font-card);
-      font-size: 12.5px;
-      font-weight: 800;
-      color: #000000;
-      cursor: pointer;
-      transition: background-color 0.12s ease;
-    }
-
-    .forge-menu-item:hover {
-      background-color: rgba(0, 0, 0, 0.08);
-    }
-
-    .forge-menu-item.active {
-      background-color: #000000;
-      color: #ffffff;
-    }
-
-    .forge-color-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      border: 1.5px solid #000000;
-      flex-shrink: 0;
-    }
-
-    .forge-menu-item.active .forge-color-dot {
-      border-color: #ffffff;
-    }
-
-    .forge-minimal-select {
-      appearance: none;
-      -webkit-appearance: none;
-      background: transparent;
-      border: none;
-      color: #000000;
-      font-family: var(--font-card);
-      font-size: 12px;
-      font-weight: 800;
-      padding: 4px 16px 4px 4px;
-      cursor: pointer;
-      outline: none;
-    }
-
-    .forge-minimal-arrow {
-      position: absolute;
-      right: 4px;
-      font-size: 9px;
-      color: #000000;
-      pointer-events: none;
-    }
-
-    .forge-minimal-input {
-      background: transparent;
-      border: none;
-      color: #000000;
-      font-family: var(--font-card);
-      font-size: 13px;
-      font-weight: 700;
-      padding: 4px 6px;
-      width: 150px;
-      outline: none;
-    }
-
-    .forge-minimal-input::placeholder {
-      color: rgba(0, 0, 0, 0.42);
-      font-weight: 600;
-    }
-
-    .forge-minimal-check {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background-color: #000000;
-      color: #ffffff;
-      border: none;
-      font-size: 14px;
-      font-weight: 900;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: transform 0.15s ease, opacity 0.15s ease;
-    }
-
-    .forge-minimal-check:hover {
-      transform: scale(1.1) !important;
-      box-shadow: none !important;
-      opacity: 0.85;
-    }
-
-    .spire-forge-popover.active {
-      display: flex;
-      animation: popInCard 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    }
-
-    @keyframes popInCard {
-      from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(0.95); }
-      to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-    }
-
     /* 放入時間軸格子後變成的精簡橫向卡帶條 */
     .tape-card {
       background-color: #ffffff;
@@ -1462,15 +1428,15 @@
       </div>
       <div class="color-picker-row">
         <span>棋盤交錯格色 (GRID ALT)</span>
-        <input type="color" id="picker-grid-alt" value="#ffffff" onchange="updateThemeColor('--grid-alt-color', this.value)" />
+        <input type="color" id="picker-grid-alt" value="#000000" onchange="updateThemeColor('--grid-alt-color', this.value)" />
       </div>
       <div class="color-picker-row">
         <span>黑色系統 (PANEL / BAR)</span>
         <input type="color" id="picker-header" value="#000000" onchange="updateThemeColor('--header-bg', this.value)" />
       </div>
       <div class="color-picker-row">
-        <span>螢光黃系統 (HERO / FOCUS)</span>
-        <input type="color" id="picker-accent" value="#e2ff00" onchange="updateThemeColor('--accent-color', this.value)" />
+        <span>強調系統 (HERO / FOCUS)</span>
+        <input type="color" id="picker-accent" value="#a8b090" onchange="updateThemeColor('--accent-color', this.value)" />
       </div>
 
       <!-- Google 雲端硬碟自動同步面板 -->
@@ -1578,14 +1544,14 @@
     const DAY_NAMES = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
     const MONTH_ABBR = ["Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.", "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."];
 
-    // 卡牌屬性與對應顏色對照表（現代直覺分類）
+    // 卡牌分類清單（統一使用介面主題配色，不套用五彩顏色）
     const CARD_ATTRIBUTES = {
-      study: { label: "學習", color: "#12b5ff" },
-      fun:   { label: "娛樂", color: "#ffe600" },
-      work:  { label: "工作", color: "#ff333b" },
-      life:  { label: "生活", color: "#ffffff" },
-      sport: { label: "運動", color: "#2ed573" },
-      art:   { label: "創作", color: "#a55eea" }
+      study: { label: "學習" },
+      fun:   { label: "娛樂" },
+      work:  { label: "工作" },
+      life:  { label: "生活" },
+      sport: { label: "運動" },
+      art:   { label: "創作" }
     };
 
     // 常見中文待辦快速英譯詞庫（並搭配線上自動翻譯備援）
@@ -1687,9 +1653,9 @@
     let state = {
       theme: {
         "--bg-color": "#002be8",
-        "--grid-alt-color": "#ffffff",
+        "--grid-alt-color": "#000000",
         "--header-bg": "#000000",
-        "--accent-color": "#e2ff00"
+        "--accent-color": "#a8b090"
       },
       cards: {}
     };
@@ -2018,7 +1984,7 @@
           if (cloudState && cloudState.cards) {
             state = cloudState;
             if (!state.theme["--grid-alt-color"]) {
-              state.theme["--grid-alt-color"] = "#ffffff";
+              state.theme["--grid-alt-color"] = "#000000";
             }
             saveToStorage(false);
             applyTheme();
@@ -2109,9 +2075,9 @@
           state = parsed;
           if (!state.theme) state.theme = {};
           if (!state.theme["--bg-color"]) state.theme["--bg-color"] = "#002be8";
-          if (!state.theme["--grid-alt-color"]) state.theme["--grid-alt-color"] = "#ffffff";
+          if (!state.theme["--grid-alt-color"]) state.theme["--grid-alt-color"] = "#000000";
           if (!state.theme["--header-bg"]) state.theme["--header-bg"] = "#000000";
-          if (!state.theme["--accent-color"]) state.theme["--accent-color"] = "#e2ff00";
+          if (!state.theme["--accent-color"]) state.theme["--accent-color"] = "#a8b090";
         } catch (e) {
           console.error("LOAD ERROR", e);
         }
@@ -2147,9 +2113,9 @@
         document.documentElement.style.setProperty(key, val);
       }
       if (document.getElementById("picker-bg")) document.getElementById("picker-bg").value = state.theme["--bg-color"] || "#002be8";
-      if (document.getElementById("picker-grid-alt")) document.getElementById("picker-grid-alt").value = state.theme["--grid-alt-color"] || "#ffffff";
+      if (document.getElementById("picker-grid-alt")) document.getElementById("picker-grid-alt").value = state.theme["--grid-alt-color"] || "#000000";
       if (document.getElementById("picker-header")) document.getElementById("picker-header").value = state.theme["--header-bg"] || "#000000";
-      if (document.getElementById("picker-accent")) document.getElementById("picker-accent").value = state.theme["--accent-color"] || "#e2ff00";
+      if (document.getElementById("picker-accent")) document.getElementById("picker-accent").value = state.theme["--accent-color"] || "#a8b090";
     }
 
     function getMonday(d) {
@@ -2534,10 +2500,6 @@
       if (card.id === selectedCardId) classList += " selected";
       if (passed) classList += " passed-card";
       div.className = classList;
-
-      if (!passed) {
-        div.style.backgroundColor = card.color;
-      }
 
       div.ondragstart = (e) => {
         draggedCardId = card.id;
@@ -3029,11 +2991,9 @@
       const numCode = parseInt(card.id.replace(/\D/g, "").slice(-4) || String(index + 1), 10);
       const monster = PIXEL_MONSTER_ROSTER[numCode % PIXEL_MONSTER_ROSTER.length];
 
-      // 取得屬性資訊與對應色彩
+      // 取得屬性資訊（統一使用介面純淨底色，不套用五彩顏色）
       const attrKey = card.attr && CARD_ATTRIBUTES[card.attr] ? card.attr : "study";
       const attrInfo = CARD_ATTRIBUTES[attrKey];
-      const cardTint = card.color || attrInfo.color;
-      slot.style.setProperty("--card-tint", cardTint);
 
       // 英文翻譯副標與隨機點數
       const enSubText = card.enTitle || getFallbackEnglishSub(card.text);
@@ -3348,16 +3308,20 @@
     let forgeMode = "create";
     let forgeEditingId = null;
     let forgeSelectedAttr = "study";
-    let forgeSelectedColor = CARD_ATTRIBUTES.study.color;
 
     function renderAttrDropdownMenu() {
       const menu = document.getElementById("forge-custom-menu");
       if (!menu) return;
       menu.innerHTML = "";
-      Object.entries(CARD_ATTRIBUTES).forEach(([key, info]) => {
+      const entries = Object.entries(CARD_ATTRIBUTES);
+      const total = entries.length;
+      entries.forEach(([key, info], idx) => {
         const item = document.createElement("div");
         item.className = "forge-menu-item" + (key === forgeSelectedAttr ? " active" : "");
-        item.innerHTML = `<span class="forge-color-dot" style="background-color: ${info.color};"></span><span>${info.label}</span>`;
+        // 越靠近底部的項目延遲越短（0ms），依序從下往上一個接一個彈出
+        const bottomUpIndex = total - 1 - idx;
+        item.style.setProperty("--stagger-idx", String(bottomUpIndex));
+        item.textContent = info.label;
         item.onclick = (e) => {
           e.stopPropagation();
           selectAttrOption(key);
@@ -3371,8 +3335,13 @@
       e.stopPropagation();
       const wrap = document.getElementById("forge-attr-dropdown");
       if (!wrap) return;
-      renderAttrDropdownMenu();
-      wrap.classList.toggle("open");
+      const willOpen = !wrap.classList.contains("open");
+      if (willOpen) {
+        renderAttrDropdownMenu();
+        wrap.classList.add("open");
+      } else {
+        wrap.classList.remove("open");
+      }
     }
 
     function closeAttrDropdown() {
@@ -3381,13 +3350,10 @@
     }
 
     function selectAttrOption(attrKey) {
-      const popover = document.getElementById("spire-forge-popover");
       const labelEl = document.getElementById("forge-attr-label");
       if (CARD_ATTRIBUTES[attrKey]) {
         forgeSelectedAttr = attrKey;
-        forgeSelectedColor = CARD_ATTRIBUTES[attrKey].color;
         if (labelEl) labelEl.textContent = CARD_ATTRIBUTES[attrKey].label;
-        if (popover) popover.style.backgroundColor = forgeSelectedColor;
       }
     }
 
@@ -3402,10 +3368,6 @@
         const attrKey = card.attr && CARD_ATTRIBUTES[card.attr] ? card.attr : "study";
         textInput.value = card.text;
         selectAttrOption(attrKey);
-        if (card.color) {
-          forgeSelectedColor = card.color;
-          if (popover) popover.style.backgroundColor = forgeSelectedColor;
-        }
       } else {
         textInput.value = "";
         selectAttrOption("study");
@@ -3432,14 +3394,13 @@
       }
 
       const selectedAttr = forgeSelectedAttr || "study";
-      const finalColor = CARD_ATTRIBUTES[selectedAttr]?.color || forgeSelectedColor;
       const fallbackEn = getFallbackEnglishSub(text);
 
       if (forgeMode === "edit" && forgeEditingId && state.cards[forgeEditingId]) {
         const oldText = state.cards[forgeEditingId].text;
         state.cards[forgeEditingId].text = text;
         state.cards[forgeEditingId].attr = selectedAttr;
-        state.cards[forgeEditingId].color = finalColor;
+        state.cards[forgeEditingId].color = "#ffffff";
         if (typeof state.cards[forgeEditingId].points !== "number") {
           state.cards[forgeEditingId].points = Math.floor(Math.random() * 90) + 10;
         }
@@ -3457,7 +3418,7 @@
           enTitle: fallbackEn,
           attr: selectedAttr,
           points: randomPoints,
-          color: finalColor,
+          color: "#ffffff",
           slot: "dock"
         };
         autoTranslateCardTitle(id, text);
